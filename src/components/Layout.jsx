@@ -5,10 +5,12 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { formatPhone } from '../utils/formatPhone'
 import Sidebar from './Sidebar'
+import useSubscription from '../hooks/useSubscription'
 
 export default function Layout({ children }) {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const { loading: subLoading, subscriptionStatus, daysLeft, isActive } = useSubscription()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [businessName, setBusinessName] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
@@ -64,6 +66,12 @@ export default function Layout({ children }) {
     setSearchResults([])
     setShowResults(false)
   }
+
+  useEffect(() => {
+    if (!subLoading && !isActive) {
+      navigate('/paywall', { replace: true })
+    }
+  }, [subLoading, isActive, navigate])
 
   return (
     <div className="min-h-screen bg-white">
@@ -126,6 +134,13 @@ export default function Layout({ children }) {
           </div>
         </div>
       </header>
+
+      {/* Trial banner */}
+      {isActive && subscriptionStatus === 'trialing' && daysLeft !== null && (
+        <div className="bg-primary/10 text-primary text-center text-sm py-2 font-medium">
+          🎉 {daysLeft} day{daysLeft !== 1 ? 's' : ''} left in your free trial
+        </div>
+      )}
 
       <main>
         {children}

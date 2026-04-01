@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react'
 import { CreditCard, User, Shield, Eye, EyeOff } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import useSubscription from '../hooks/useSubscription'
 
 export default function Settings() {
   const { user, signOut } = useAuth()
+  const { subscriptionStatus, daysLeft } = useSubscription()
 
   // Information state
   const [businessName, setBusinessName] = useState('')
@@ -123,7 +125,45 @@ export default function Settings() {
             <CreditCard size={18} className="text-primary" />
             <h2 className="text-base font-semibold">Billing</h2>
           </div>
-          <p className="text-sm text-text-secondary">Billing settings coming soon</p>
+          {subscriptionStatus === 'trialing' && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs font-semibold rounded-full">Free Trial</span>
+              </div>
+              <p className="text-sm text-text-secondary">
+                {daysLeft > 0
+                  ? `${daysLeft} day${daysLeft !== 1 ? 's' : ''} remaining`
+                  : 'Trial expired'}
+              </p>
+            </div>
+          )}
+          {subscriptionStatus === 'active' && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded-full">Active</span>
+                <span className="text-sm text-text-secondary">$15/month</span>
+              </div>
+              <button
+                onClick={() => alert('Cancel flow coming soon')}
+                className="w-full py-2.5 border border-red-300 text-red-600 rounded-xl text-sm font-semibold hover:bg-red-50"
+              >
+                Cancel Subscription
+              </button>
+            </div>
+          )}
+          {subscriptionStatus !== 'trialing' && subscriptionStatus !== 'active' && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 bg-red-100 text-red-600 text-xs font-semibold rounded-full">Expired</span>
+              </div>
+              <button
+                onClick={() => alert('Stripe checkout coming soon')}
+                className="w-full py-2.5 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary/90"
+              >
+                Resubscribe
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Information Card */}

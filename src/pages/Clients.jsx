@@ -33,6 +33,7 @@ export default function ClientsPage({ filter }) {
   const [showAddClient, setShowAddClient] = useState(false)
   const [newClient, setNewClient] = useState({ name: '', phone: '', address: '', notes: '' })
   const [savingClient, setSavingClient] = useState(false)
+  const [sortBy, setSortBy] = useState('newest')
 
   useEffect(() => {
     if (user) fetchClients()
@@ -121,6 +122,18 @@ export default function ClientsPage({ filter }) {
       c.name?.toLowerCase().includes(q) ||
       c.phone?.includes(q)
     )
+  }).sort((a, b) => {
+    switch (sortBy) {
+      case 'oldest':
+        return new Date(a.created_at) - new Date(b.created_at)
+      case 'az':
+        return (a.name || '').localeCompare(b.name || '')
+      case 'za':
+        return (b.name || '').localeCompare(a.name || '')
+      case 'newest':
+      default:
+        return new Date(b.created_at) - new Date(a.created_at)
+    }
   })
 
   if (loading) {
@@ -135,16 +148,28 @@ export default function ClientsPage({ filter }) {
     <div className="px-4 pt-4 pb-24">
       <h1 className="text-xl font-bold mb-4">{titles[filter] || 'Clients'}</h1>
 
-      {/* Search */}
-      <div className="relative mb-4">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by name or phone..."
-          className="w-full pl-9 pr-3 py-3 border border-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-        />
+      {/* Search + Sort */}
+      <div className="flex gap-2 mb-4">
+        <div className="relative flex-1">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name or phone..."
+            className="w-full pl-9 pr-3 py-3 border border-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+          />
+        </div>
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+          className="px-3 py-3 border border-border rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+        >
+          <option value="newest">Newest First</option>
+          <option value="oldest">Oldest First</option>
+          <option value="az">A-Z</option>
+          <option value="za">Z-A</option>
+        </select>
       </div>
 
       {searchFiltered.length === 0 ? (

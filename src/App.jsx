@@ -14,6 +14,7 @@ import Clients from './pages/Clients'
 import ClientDetail from './pages/ClientDetail'
 import JobDetail from './pages/JobDetail'
 import Settings from './pages/Settings'
+import Paywall from './pages/Paywall'
 
 function PublicRoute({ children }) {
   const { user, loading } = useAuth()
@@ -30,6 +31,7 @@ function AppRoutes() {
       <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
       <Route path="/admin" element={<AdminLogin />} />
       <Route path="/admin/dashboard" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
+      <Route path="/paywall" element={<ProtectedRoute><Paywall /></ProtectedRoute>} />
       <Route path="/*" element={
         <ProtectedRoute>
           <Layout>
