@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Phone, MessageSquare, MapPin, Trash2, Camera, X } from 'lucide-react'
+import { ArrowLeft, Phone, MessageSquare, MapPin, Trash2, Camera, X, Pencil, Check } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 
@@ -16,6 +16,15 @@ const statusColors = {
   quoted: { bg: 'bg-quoted-bg', text: 'text-quoted-text', ring: 'ring-quoted-text' },
   scheduled: { bg: 'bg-scheduled-bg', text: 'text-scheduled-text', ring: 'ring-scheduled-text' },
   done: { bg: 'bg-done-bg', text: 'text-done-text', ring: 'ring-done-text' },
+}
+
+const formatDateTimeReadable = (dateStr) => {
+  if (!dateStr) return ''
+  const d = new Date(dateStr.includes('T') ? dateStr : dateStr + 'T00:00:00')
+  if (isNaN(d.getTime())) return dateStr
+  const date = d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+  const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+  return dateStr.includes('T') ? `${date} at ${time}` : date
 }
 
 export default function JobDetail() {
@@ -37,6 +46,11 @@ export default function JobDetail() {
   const [notes, setNotes] = useState('')
   const [status, setStatus] = useState('lead')
   const [changed, setChanged] = useState(false)
+
+  // Appointment edit mode
+  const [editingDate, setEditingDate] = useState(false)
+  const [editDateValue, setEditDateValue] = useState('')
+  const [savingDate, setSavingDate] = useState(false)
 
   // Photo upload
   const [uploading, setUploading] = useState(false)
@@ -71,17 +85,73 @@ export default function JobDetail() {
   }
 
   const handleStatusChange = async (newStatus) => {
+    const oldStatus = status
     setStatus(newStatus)
+
     await supabase
       .from('jobs')
       .update({ status: newStatus, updated_at: new Date().toISOString() })
       .eq('id', id)
+
+    let description
+    if (newStatus === 'scheduled' && scheduledDate) {
+      description = `Appointment scheduled for ${formatDateTimeReadable(scheduledDate)}`
+    } else if (oldStatus === 'scheduled' && newStatus !== 'scheduled' && scheduledDate) {
+      description = `Appointment cancelled - was scheduled for ${formatDateTimeReadable(scheduledDate)}`
+    } else {
+      description = `Job status changed to ${newStatus}`
+    }
+
     await supabase.from('client_events').insert({
       client_id: job.client_id,
       user_id: user.id,
       event_type: 'status_change',
-      description: `Job status changed to ${newStatus}`,
+      description,
     })
+  }
+
+  const handleStartEditDate = () => {
+    setEditDateValue(scheduledDate)
+    setEditingDate(true)
+  }
+
+  const handleCancelEditDate = () => {
+    setEditingDate(false)
+    setEditDateValue('')
+  }
+
+  const handleSaveDate = async () => {
+    setSavingDate(true)
+    const oldDate = scheduledDate
+    const newDate = editDateValue
+
+    await supabase.from('jobs').update({
+      scheduled_date: newDate || null,
+      updated_at: new Date().toISOString(),
+    }).eq('id', id)
+
+    // Create timeline entry
+    let description
+    if (oldDate && newDate) {
+      description = `Appointment rescheduled from ${formatDateTimeReadable(oldDate)} to ${formatDateTimeReadable(newDate)}`
+    } else if (!oldDate && newDate) {
+      description = `Appointment scheduled for ${formatDateTimeReadable(newDate)}`
+    } else if (oldDate && !newDate) {
+      description = `Appointment cancelled - was scheduled for ${formatDateTimeReadable(oldDate)}`
+    }
+
+    if (description) {
+      await supabase.from('client_events').insert({
+        client_id: job.client_id,
+        user_id: user.id,
+        event_type: 'status_change',
+        description,
+      })
+    }
+
+    setScheduledDate(newDate)
+    setEditingDate(false)
+    setSavingDate(false)
   }
 
   const handleSave = async () => {
@@ -152,7 +222,6 @@ export default function JobDetail() {
   const handleDeletePhoto = async (photo) => {
     if (!confirm('Delete this photo?')) return
 
-    // Extract path from URL
     const urlParts = photo.photo_url.split('/job-photos/')
     if (urlParts[1]) {
       await supabase.storage.from('job-photos').remove([urlParts[1]])
@@ -188,7 +257,7 @@ export default function JobDetail() {
         <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-primary mb-4">
           <ArrowLeft size={20} /> Back
         </button>
-        <p className="text-text-secondary">Job not found.</p>
+        <p className="text-text-secondary dark:text-dark-text-secondary">Job not found.</p>
       </div>
     )
   }
@@ -227,7 +296,7 @@ export default function JobDetail() {
               href={`https://maps.google.com/?q=${encodeURIComponent(client.address)}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1 text-sm text-text-secondary ml-1"
+              className="flex items-center gap-1 text-sm text-text-secondary dark:text-dark-text-secondary ml-1"
             >
               <MapPin size={14} /> {client.address}
             </a>
@@ -237,7 +306,7 @@ export default function JobDetail() {
 
       {/* Status progression */}
       <div className="mb-6">
-        <label className="block text-sm font-medium mb-2">Status</label>
+        <label className="block text-sm font-medium mb-2 dark:text-dark-text">Status</label>
         <div className="flex gap-1.5 overflow-x-auto pb-1">
           {statuses.map((s, i) => {
             const currentIndex = statuses.findIndex(st => st.key === status)
@@ -254,7 +323,7 @@ export default function JobDetail() {
                     ? `${colors.bg} ${colors.text} ring-2 ${colors.ring}`
                     : isPast
                     ? `${colors.bg} ${colors.text} opacity-60`
-                    : 'bg-surface text-text-secondary'
+                    : 'bg-surface dark:bg-dark-card text-text-secondary dark:text-dark-text-secondary'
                 }`}
               >
                 {isPast ? '✓ ' : ''}{s.label}
@@ -267,11 +336,11 @@ export default function JobDetail() {
       {/* Job details */}
       <div className="space-y-3 mb-6">
         <div>
-          <label className="block text-sm font-medium mb-1">Job Type</label>
+          <label className="block text-sm font-medium mb-1 dark:text-dark-text">Job Type</label>
           <select
             value={jobType}
             onChange={markChanged(setJobType)}
-            className="w-full px-3 py-3 border border-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
+            className="w-full px-3 py-3 border border-border dark:border-dark-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white dark:bg-dark-card dark:text-dark-text"
           >
             <option value="rescreen">Rescreen</option>
             <option value="repair">Repair</option>
@@ -282,11 +351,11 @@ export default function JobDetail() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Screen Type</label>
+          <label className="block text-sm font-medium mb-1 dark:text-dark-text">Screen Type</label>
           <select
             value={screenType}
             onChange={markChanged(setScreenType)}
-            className="w-full px-3 py-3 border border-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
+            className="w-full px-3 py-3 border border-border dark:border-dark-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white dark:bg-dark-card dark:text-dark-text"
           >
             <option value="">Select...</option>
             <option value="standard">Standard</option>
@@ -301,45 +370,88 @@ export default function JobDetail() {
 
         <div className="flex gap-3">
           <div className="flex-1">
-            <label className="block text-sm font-medium mb-1">Panels</label>
+            <label className="block text-sm font-medium mb-1 dark:text-dark-text">Panels</label>
             <input
               type="number"
               value={panelCount}
               onChange={markChanged(setPanelCount)}
-              className="w-full px-3 py-3 border border-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full px-3 py-3 border border-border dark:border-dark-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white dark:bg-dark-card dark:text-dark-text"
               placeholder="0"
             />
           </div>
           <div className="flex-1">
-            <label className="block text-sm font-medium mb-1">Price ($)</label>
+            <label className="block text-sm font-medium mb-1 dark:text-dark-text">Price ($)</label>
             <input
               type="number"
               value={price}
               onChange={markChanged(setPrice)}
-              className="w-full px-3 py-3 border border-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full px-3 py-3 border border-border dark:border-dark-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white dark:bg-dark-card dark:text-dark-text"
               placeholder="0.00"
               step="0.01"
             />
           </div>
         </div>
 
+        {/* Scheduled Date & Time with inline edit */}
         <div>
-          <label className="block text-sm font-medium mb-1">Scheduled Date & Time</label>
-          <input
-            type="datetime-local"
-            value={scheduledDate}
-            onChange={markChanged(setScheduledDate)}
-            className="w-full px-3 py-3 border border-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30"
-          />
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-sm font-medium dark:text-dark-text">Scheduled Date & Time</label>
+            {!editingDate && (
+              <button
+                onClick={handleStartEditDate}
+                className="p-1 rounded-lg hover:bg-surface dark:hover:bg-dark-bg text-text-secondary dark:text-dark-text-secondary"
+              >
+                <Pencil size={14} />
+              </button>
+            )}
+          </div>
+          {editingDate ? (
+            <div className="space-y-2">
+              <input
+                type="datetime-local"
+                value={editDateValue}
+                onChange={(e) => setEditDateValue(e.target.value)}
+                className="w-full px-3 py-3 border border-primary rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white dark:bg-dark-card dark:text-dark-text"
+                autoFocus
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSaveDate}
+                  disabled={savingDate}
+                  className="flex-1 py-2.5 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-1"
+                >
+                  <Check size={14} />
+                  {savingDate ? 'Saving...' : 'Save'}
+                </button>
+                <button
+                  onClick={handleCancelEditDate}
+                  className="flex-1 py-2.5 border border-border dark:border-dark-border text-text-primary dark:text-dark-text rounded-xl text-sm font-semibold hover:bg-surface dark:hover:bg-dark-bg"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div
+              onClick={handleStartEditDate}
+              className="w-full px-3 py-3 border border-border dark:border-dark-border rounded-xl text-base bg-white dark:bg-dark-card cursor-pointer hover:border-primary/50 transition-colors"
+            >
+              {scheduledDate ? (
+                <span className="dark:text-dark-text">{formatDateTimeReadable(scheduledDate)}</span>
+              ) : (
+                <span className="text-text-secondary dark:text-dark-text-secondary">No date set - tap to schedule</span>
+              )}
+            </div>
+          )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Notes</label>
+          <label className="block text-sm font-medium mb-1 dark:text-dark-text">Notes</label>
           <textarea
             value={notes}
             onChange={markChanged(setNotes)}
             rows={3}
-            className="w-full px-3 py-3 border border-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+            className="w-full px-3 py-3 border border-border dark:border-dark-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none bg-white dark:bg-dark-card dark:text-dark-text"
             placeholder="Job notes..."
           />
         </div>
@@ -356,9 +468,9 @@ export default function JobDetail() {
       </div>
 
       {/* Photos */}
-      <div className="border-t border-border pt-4 mb-6">
+      <div className="border-t border-border dark:border-dark-border pt-4 mb-6">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base font-semibold">Photos ({photos.length})</h2>
+          <h2 className="text-base font-semibold dark:text-dark-text">Photos ({photos.length})</h2>
           <label className="flex items-center gap-1 text-sm font-medium text-primary cursor-pointer">
             <Camera size={16} />
             {uploading ? 'Uploading...' : 'Add Photo'}
@@ -374,11 +486,11 @@ export default function JobDetail() {
         </div>
 
         {photos.length === 0 ? (
-          <p className="text-sm text-text-secondary py-4">No photos yet.</p>
+          <p className="text-sm text-text-secondary dark:text-dark-text-secondary py-4">No photos yet.</p>
         ) : (
           <div className="grid grid-cols-3 gap-2">
             {photos.map(photo => (
-              <div key={photo.id} className="relative aspect-square rounded-xl overflow-hidden bg-surface">
+              <div key={photo.id} className="relative aspect-square rounded-xl overflow-hidden bg-surface dark:bg-dark-bg">
                 <img
                   src={photo.photo_url}
                   alt=""
@@ -411,10 +523,10 @@ export default function JobDetail() {
       )}
 
       {/* Delete job */}
-      <div className="border-t border-border pt-6">
+      <div className="border-t border-border dark:border-dark-border pt-6">
         <button
           onClick={handleDeleteJob}
-          className="w-full py-3 border border-red-300 text-red-600 rounded-xl font-semibold text-base hover:bg-red-50"
+          className="w-full py-3 border border-red-300 text-red-600 rounded-xl font-semibold text-base hover:bg-red-50 dark:hover:bg-red-500/10"
         >
           Delete Job
         </button>

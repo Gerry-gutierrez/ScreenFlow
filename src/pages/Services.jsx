@@ -100,7 +100,7 @@ export default function Services() {
   return (
     <div className="px-4 pt-4 pb-8">
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-bold">Services</h1>
+        <h1 className="text-xl font-bold dark:text-dark-text">Services</h1>
         <button
           onClick={openAdd}
           className="flex items-center gap-1 px-3 py-2 bg-primary text-white rounded-lg text-sm font-medium"
@@ -111,18 +111,18 @@ export default function Services() {
 
       {services.length === 0 ? (
         <div className="text-center py-8">
-          <p className="text-sm text-text-secondary">No services added yet.</p>
-          <p className="text-sm text-text-secondary mt-1">Tap <strong>Add Service</strong> to get started.</p>
+          <p className="text-sm text-text-secondary dark:text-dark-text-secondary">No services added yet.</p>
+          <p className="text-sm text-text-secondary dark:text-dark-text-secondary mt-1">Tap <strong>Add Service</strong> to get started.</p>
         </div>
       ) : (
         <div className="space-y-2">
           {services.map(service => (
-            <div key={service.id} className="bg-white border border-border rounded-xl p-4">
+            <div key={service.id} className="bg-white dark:bg-dark-card border border-border dark:border-dark-border rounded-xl p-4">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm">{service.name}</p>
+                  <p className="font-semibold text-sm dark:text-dark-text">{service.name}</p>
                   {service.description && (
-                    <p className="text-xs text-text-secondary mt-0.5">{service.description}</p>
+                    <p className="text-xs text-text-secondary dark:text-dark-text-secondary mt-0.5">{service.description}</p>
                   )}
                   {service.price != null && (
                     <p className="text-sm font-medium text-primary mt-1">{formatPrice(service.price)}</p>
@@ -131,13 +131,13 @@ export default function Services() {
                 <div className="flex items-center gap-1 shrink-0">
                   <button
                     onClick={() => openEdit(service)}
-                    className="p-2 rounded-lg hover:bg-surface text-text-secondary"
+                    className="p-2 rounded-lg hover:bg-surface dark:hover:bg-dark-bg text-text-secondary dark:text-dark-text-secondary"
                   >
                     <Pencil size={16} />
                   </button>
                   <button
                     onClick={() => handleDelete(service.id)}
-                    className="p-2 rounded-lg hover:bg-red-50 text-red-500"
+                    className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 text-red-500"
                   >
                     <Trash2 size={16} />
                   </button>
@@ -151,43 +151,43 @@ export default function Services() {
       {/* Add/Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center">
-          <div className="bg-white w-full sm:max-w-md sm:rounded-xl rounded-t-2xl p-5">
+          <div className="bg-white dark:bg-dark-card w-full sm:max-w-md sm:rounded-xl rounded-t-2xl p-5">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold">{editing ? 'Edit Service' : 'Add Service'}</h2>
-              <button onClick={() => setShowModal(false)} className="p-1 rounded-full hover:bg-surface">
+              <h2 className="text-lg font-bold dark:text-dark-text">{editing ? 'Edit Service' : 'Add Service'}</h2>
+              <button onClick={() => setShowModal(false)} className="p-1 rounded-full hover:bg-surface dark:hover:bg-dark-bg dark:text-dark-text">
                 <X size={20} />
               </button>
             </div>
 
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium mb-1">Service Name *</label>
+                <label className="block text-sm font-medium mb-1 dark:text-dark-text">Service Name *</label>
                 <input
                   type="text"
                   value={form.name}
                   onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))}
-                  className="w-full px-3 py-3 border border-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  className="w-full px-3 py-3 border border-border dark:border-dark-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white dark:bg-dark-bg dark:text-dark-text"
                   placeholder="e.g. Full Rescreen"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Description</label>
+                <label className="block text-sm font-medium mb-1 dark:text-dark-text">Description</label>
                 <textarea
                   value={form.description}
                   onChange={(e) => setForm(f => ({ ...f, description: e.target.value }))}
                   rows={3}
-                  className="w-full px-3 py-3 border border-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none"
+                  className="w-full px-3 py-3 border border-border dark:border-dark-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none bg-white dark:bg-dark-bg dark:text-dark-text"
                   placeholder="Describe the service..."
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Price</label>
+                <label className="block text-sm font-medium mb-1 dark:text-dark-text">Price</label>
                 <input
                   type="number"
                   step="0.01"
                   value={form.price}
                   onChange={(e) => setForm(f => ({ ...f, price: e.target.value }))}
-                  className="w-full px-3 py-3 border border-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  className="w-full px-3 py-3 border border-border dark:border-dark-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white dark:bg-dark-bg dark:text-dark-text"
                   placeholder="0.00"
                 />
               </div>

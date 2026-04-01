@@ -60,21 +60,21 @@ export default function Sidebar({ isOpen, onClose }) {
 
       {/* Drawer */}
       <div
-        className={`fixed top-0 left-0 bottom-0 w-72 bg-white z-50 flex flex-col shadow-xl transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 left-0 bottom-0 w-72 bg-white dark:bg-dark-card z-50 flex flex-col shadow-xl transition-transform duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-border">
+        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-border dark:border-dark-border">
           <div>
             <h2 className="text-lg font-bold text-primary">ScreenFlow</h2>
             {businessName && (
-              <p className="text-xs text-text-secondary mt-0.5">{businessName}</p>
+              <p className="text-xs text-text-secondary dark:text-dark-text-secondary mt-0.5">{businessName}</p>
             )}
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-full hover:bg-surface"
+            className="p-1.5 rounded-full hover:bg-surface dark:hover:bg-dark-bg dark:text-dark-text"
           >
             <X size={20} />
           </button>
@@ -91,8 +91,8 @@ export default function Sidebar({ isOpen, onClose }) {
               className={({ isActive }) =>
                 `flex items-center gap-3 px-5 py-3 text-sm font-medium transition-colors ${
                   isActive
-                    ? 'text-primary bg-primary-light'
-                    : 'text-text-primary hover:bg-surface'
+                    ? 'text-primary bg-primary-light dark:bg-primary/20'
+                    : 'text-text-primary dark:text-dark-text hover:bg-surface dark:hover:bg-dark-bg'
                 }`
               }
             >
@@ -106,8 +106,8 @@ export default function Sidebar({ isOpen, onClose }) {
             onClick={() => setClientsOpen(!clientsOpen)}
             className={`w-full flex items-center gap-3 px-5 py-3 text-sm font-medium transition-colors ${
               isClientsActive
-                ? 'text-primary bg-primary-light'
-                : 'text-text-primary hover:bg-surface'
+                ? 'text-primary bg-primary-light dark:bg-primary/20'
+                : 'text-text-primary dark:text-dark-text hover:bg-surface dark:hover:bg-dark-bg'
             }`}
           >
             <Users size={20} />
@@ -119,7 +119,7 @@ export default function Sidebar({ isOpen, onClose }) {
           </button>
 
           {clientsOpen && (
-            <div className="ml-8 border-l border-border">
+            <div className="ml-8 border-l border-border dark:border-dark-border">
               {clientSubItems.map(({ to, label }) => (
                 <NavLink
                   key={to}
@@ -129,8 +129,8 @@ export default function Sidebar({ isOpen, onClose }) {
                   className={({ isActive }) =>
                     `block pl-4 pr-5 py-2.5 text-xs font-medium transition-colors ${
                       isActive
-                        ? 'text-primary bg-primary-light'
-                        : 'text-text-secondary hover:bg-surface hover:text-text-primary'
+                        ? 'text-primary bg-primary-light dark:bg-primary/20'
+                        : 'text-text-secondary dark:text-dark-text-secondary hover:bg-surface dark:hover:bg-dark-bg hover:text-text-primary dark:hover:text-dark-text'
                     }`
                   }
                 >
@@ -149,8 +149,8 @@ export default function Sidebar({ isOpen, onClose }) {
               className={({ isActive }) =>
                 `flex items-center gap-3 px-5 py-3 text-sm font-medium transition-colors ${
                   isActive
-                    ? 'text-primary bg-primary-light'
-                    : 'text-text-primary hover:bg-surface'
+                    ? 'text-primary bg-primary-light dark:bg-primary/20'
+                    : 'text-text-primary dark:text-dark-text hover:bg-surface dark:hover:bg-dark-bg'
                 }`
               }
             >
@@ -161,10 +161,10 @@ export default function Sidebar({ isOpen, onClose }) {
         </nav>
 
         {/* Log Out pinned at bottom */}
-        <div className="border-t border-border">
+        <div className="border-t border-border dark:border-dark-border">
           <button
             onClick={async () => { await signOut(); onClose(); navigate('/', { replace: true }) }}
-            className="w-full flex items-center gap-3 px-5 py-3 text-sm font-medium text-text-secondary hover:text-red-500 hover:bg-red-50 transition-colors"
+            className="w-full flex items-center gap-3 px-5 py-3 text-sm font-medium text-text-secondary dark:text-dark-text-secondary hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
           >
             <LogOut size={20} />
             <span>Log Out</span>

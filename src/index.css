@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-primary: #0F6E56;
   --color-primary-light: #E1F5EE;
@@ -7,6 +9,13 @@
   --color-border: #E5E5E3;
   --color-text-primary: #1A1A1A;
   --color-text-secondary: #6B6B6B;
+
+  --color-dark-bg: #0f172a;
+  --color-dark-card: #1e293b;
+  --color-dark-border: #334155;
+  --color-dark-text: #f1f5f9;
+  --color-dark-text-secondary: #94a3b8;
+  --color-dark-surface: #1e293b;
 
   --color-lead-bg: #E6F1FB;
   --color-lead-text: #185FA5;
@@ -28,6 +37,10 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+html {
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
 body {
   font-family: var(--font-family-sans);
   color: var(--color-text-primary);
@@ -36,6 +49,17 @@ body {
   padding: 0;
 }
 
+.dark body {
+  background: var(--color-dark-bg);
+  color: var(--color-dark-text);
+}
+
 input, select, textarea, button {
   font-family: inherit;
+}
+
+/* Smooth transitions for dark mode */
+.dark-transition,
+.dark-transition *:not(img):not(svg):not(path) {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }

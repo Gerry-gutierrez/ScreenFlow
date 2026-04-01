@@ -91,56 +91,56 @@ export default function Dashboard() {
 
   return (
     <div className="px-4 pt-4 pb-8">
-      <h1 className="text-xl font-bold mb-4">Dashboard</h1>
+      <h1 className="text-xl font-bold mb-4 dark:text-dark-text">Dashboard</h1>
 
       <div className="grid grid-cols-2 gap-3 mb-4">
-        <div className="bg-white border border-border rounded-xl p-4 text-center">
+        <div className="bg-white dark:bg-dark-card border border-border dark:border-dark-border rounded-xl p-4 text-center">
           <p className="text-2xl font-bold text-primary">{stats.activeJobs}</p>
-          <p className="text-xs text-text-secondary mt-1">Active Jobs</p>
+          <p className="text-xs text-text-secondary dark:text-dark-text-secondary mt-1">Active Jobs</p>
         </div>
-        <div className="bg-white border border-border rounded-xl p-4 text-center">
+        <div className="bg-white dark:bg-dark-card border border-border dark:border-dark-border rounded-xl p-4 text-center">
           <p className="text-2xl font-bold text-primary">{formatPrice(stats.quotedRevenue) || '$0'}</p>
-          <p className="text-xs text-text-secondary mt-1">Quoted Revenue</p>
+          <p className="text-xs text-text-secondary dark:text-dark-text-secondary mt-1">Quoted Revenue</p>
         </div>
-        <div className="bg-white border border-border rounded-xl p-4 text-center">
+        <div className="bg-white dark:bg-dark-card border border-border dark:border-dark-border rounded-xl p-4 text-center">
           <p className="text-2xl font-bold text-primary">{stats.completedThisWeek}</p>
-          <p className="text-xs text-text-secondary mt-1">Completed This Week</p>
+          <p className="text-xs text-text-secondary dark:text-dark-text-secondary mt-1">Completed This Week</p>
         </div>
-        <div className="bg-white border border-border rounded-xl p-4 text-center">
+        <div className="bg-white dark:bg-dark-card border border-border dark:border-dark-border rounded-xl p-4 text-center">
           <p className="text-2xl font-bold text-primary">{stats.conversionRate}%</p>
-          <p className="text-xs text-text-secondary mt-1">Active → Done</p>
+          <p className="text-xs text-text-secondary dark:text-dark-text-secondary mt-1">Active → Done</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Appointments Today */}
-        <div onClick={() => navigate('/appointments')} className="bg-white border border-border rounded-xl p-4 cursor-pointer hover:shadow-md transition-shadow">
+        <div onClick={() => navigate('/appointments')} className="bg-white dark:bg-dark-card border border-border dark:border-dark-border rounded-xl p-4 cursor-pointer hover:shadow-md transition-shadow">
           <div className="flex items-center gap-2 mb-3">
             <Clock size={18} className="text-primary" />
-            <h2 className="text-base font-semibold">Appointments Today</h2>
+            <h2 className="text-base font-semibold dark:text-dark-text">Appointments Today</h2>
           </div>
 
           {todayJobs.length === 0 ? (
-            <p className="text-sm text-text-secondary py-4">No appointments today</p>
+            <p className="text-sm text-text-secondary dark:text-dark-text-secondary py-4">No appointments today</p>
           ) : (
             <div className="space-y-3">
               {todayJobs.map(job => (
                 <div
                   key={job.id}
                   onClick={() => navigate(`/jobs/${job.id}`)}
-                  className="border border-border rounded-lg p-3 active:bg-surface cursor-pointer"
+                  className="border border-border dark:border-dark-border rounded-lg p-3 active:bg-surface dark:active:bg-dark-bg cursor-pointer"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       {job.scheduled_date && (
                         <p className="text-xs font-medium text-primary mb-1">
-                          {formatTime(job.scheduled_date + 'T' + (job.scheduled_time || '00:00'))}
+                          {formatTime(job.scheduled_date.includes('T') ? job.scheduled_date : job.scheduled_date + 'T' + (job.scheduled_time || '00:00'))}
                         </p>
                       )}
-                      <p className="font-semibold text-sm truncate">{job.clients?.name || 'Unknown'}</p>
+                      <p className="font-semibold text-sm truncate dark:text-dark-text">{job.clients?.name || 'Unknown'}</p>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-xs text-text-secondary">{jobTypeLabels[job.job_type] || job.job_type}</span>
-                        {job.price && <span className="text-xs font-medium">{formatPrice(job.price)}</span>}
+                        <span className="text-xs text-text-secondary dark:text-dark-text-secondary">{jobTypeLabels[job.job_type] || job.job_type}</span>
+                        {job.price && <span className="text-xs font-medium dark:text-dark-text">{formatPrice(job.price)}</span>}
                       </div>
                     </div>
                     {job.clients?.phone && (
@@ -160,28 +160,28 @@ export default function Dashboard() {
         </div>
 
         {/* Quoted - Waiting on Apt */}
-        <div onClick={() => navigate('/clients/active')} className="bg-white border border-border rounded-xl p-4 cursor-pointer hover:shadow-md transition-shadow">
+        <div onClick={() => navigate('/clients/active')} className="bg-white dark:bg-dark-card border border-border dark:border-dark-border rounded-xl p-4 cursor-pointer hover:shadow-md transition-shadow">
           <div className="flex items-center gap-2 mb-3">
             <div className="w-2.5 h-2.5 rounded-full bg-quoted-text" />
-            <h2 className="text-base font-semibold">Quoted - Waiting on Apt</h2>
+            <h2 className="text-base font-semibold dark:text-dark-text">Quoted - Waiting on Apt</h2>
           </div>
 
           {quotedJobs.length === 0 ? (
-            <p className="text-sm text-text-secondary py-4">No clients waiting</p>
+            <p className="text-sm text-text-secondary dark:text-dark-text-secondary py-4">No clients waiting</p>
           ) : (
             <div className="space-y-3">
               {quotedJobs.map(job => (
                 <div
                   key={job.id}
                   onClick={(e) => { e.stopPropagation(); navigate(`/clients/${job.client_id}`) }}
-                  className="border border-border rounded-lg p-3 active:bg-surface cursor-pointer"
+                  className="border border-border dark:border-dark-border rounded-lg p-3 active:bg-surface dark:active:bg-dark-bg cursor-pointer"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm truncate">{job.clients?.name || 'Unknown'}</p>
+                      <p className="font-semibold text-sm truncate dark:text-dark-text">{job.clients?.name || 'Unknown'}</p>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-xs text-text-secondary">{jobTypeLabels[job.job_type] || job.job_type}</span>
-                        {job.price && <span className="text-xs font-medium">{formatPrice(job.price)}</span>}
+                        <span className="text-xs text-text-secondary dark:text-dark-text-secondary">{jobTypeLabels[job.job_type] || job.job_type}</span>
+                        {job.price && <span className="text-xs font-medium dark:text-dark-text">{formatPrice(job.price)}</span>}
                       </div>
                     </div>
                     {job.clients?.phone && (

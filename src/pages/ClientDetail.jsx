@@ -91,10 +91,36 @@ export default function ClientDetail() {
       setNotes(c.notes || '')
     }
 
-    setJobs(jobsRes.data || [])
-    setEvents(eventsRes.data || [])
+    const fetchedJobs = jobsRes.data || []
+    const fetchedEvents = eventsRes.data || []
+    setJobs(fetchedJobs)
 
-    const jobIds = (jobsRes.data || []).map(j => j.id)
+    // One-time migration: fix old "Job status changed to scheduled" entries
+    // to include the actual appointment date/time
+    const staleEvents = fetchedEvents.filter(e =>
+      e.event_type === 'status_change' && e.description === 'Job status changed to scheduled'
+    )
+    if (staleEvents.length > 0) {
+      const scheduledJobs = fetchedJobs.filter(j => j.scheduled_date)
+      for (const event of staleEvents) {
+        // Find the job's scheduled_date (best match: use any job with a date)
+        const matchJob = scheduledJobs[0]
+        if (matchJob) {
+          const dateStr = matchJob.scheduled_date
+          const d = new Date(dateStr.includes('T') ? dateStr : dateStr + 'T00:00:00')
+          const date = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+          const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+          const readable = dateStr.includes('T') ? `${date} at ${time}` : date
+          const newDesc = `Appointment scheduled for ${readable}`
+          event.description = newDesc
+          supabase.from('client_events').update({ description: newDesc }).eq('id', event.id).then(() => {})
+        }
+      }
+    }
+
+    setEvents(fetchedEvents)
+
+    const jobIds = fetchedJobs.map(j => j.id)
     let allPhotos = []
     if (jobIds.length > 0) {
       const { data: photosData } = await supabase
@@ -192,17 +218,40 @@ export default function ClientDetail() {
     setJmViewingPhoto(null)
   }
 
+  const formatDateTimeReadable = (dateStr) => {
+    if (!dateStr) return ''
+    const d = new Date(dateStr.includes('T') ? dateStr : dateStr + 'T00:00:00')
+    if (isNaN(d.getTime())) return dateStr
+    const date = d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+    return dateStr.includes('T') ? `${date} at ${time}` : date
+  }
+
   const handleJobStatusChange = async (newStatus) => {
+    const oldStatus = jmStatus
     setJmStatus(newStatus)
     await supabase.from('jobs').update({ status: newStatus, updated_at: new Date().toISOString() }).eq('id', selectedJob.id)
+
+    let description
+    if (newStatus === 'scheduled' && jmScheduledDate) {
+      description = `Appointment scheduled for ${formatDateTimeReadable(jmScheduledDate)}`
+    } else if (oldStatus === 'scheduled' && newStatus !== 'scheduled' && jmScheduledDate) {
+      description = `Appointment cancelled - was scheduled for ${formatDateTimeReadable(jmScheduledDate)}`
+    } else {
+      description = `Job status changed to ${newStatus}`
+    }
+
     await supabase.from('client_events').insert({
-      client_id: id, user_id: user.id, event_type: 'status_change', description: `Job status changed to ${newStatus}`,
+      client_id: id, user_id: user.id, event_type: 'status_change', description,
     })
     fetchData()
   }
 
   const handleJobSave = async () => {
     setJmSaving(true)
+    const oldDate = selectedJob.scheduled_date
+    const newDate = jmScheduledDate
+
     await supabase.from('jobs').update({
       job_type: jmJobType,
       screen_type: jmScreenType || null,
@@ -212,6 +261,23 @@ export default function ClientDetail() {
       notes: jmNotes || null,
       updated_at: new Date().toISOString(),
     }).eq('id', selectedJob.id)
+
+    // Log reschedule if date changed
+    if (oldDate !== newDate) {
+      let description
+      if (oldDate && newDate) {
+        description = `Appointment rescheduled from ${formatDateTimeReadable(oldDate)} to ${formatDateTimeReadable(newDate)}`
+      } else if (!oldDate && newDate) {
+        description = `Appointment scheduled for ${formatDateTimeReadable(newDate)}`
+      } else if (oldDate && !newDate) {
+        description = `Appointment cancelled - was scheduled for ${formatDateTimeReadable(oldDate)}`
+      }
+      if (description) {
+        await supabase.from('client_events').insert({
+          client_id: id, user_id: user.id, event_type: 'status_change', description,
+        })
+      }
+    }
     setJmSaving(false)
     setJmChanged(false)
     fetchData()
@@ -276,7 +342,7 @@ export default function ClientDetail() {
         <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-primary mb-4">
           <ArrowLeft size={20} /> Back
         </button>
-        <p className="text-text-secondary">Client not found.</p>
+        <p className="text-text-secondary dark:text-dark-text-secondary">Client not found.</p>
       </div>
     )
   }
@@ -291,33 +357,33 @@ export default function ClientDetail() {
       {/* Compact contact header */}
       <div
         onClick={openEditModal}
-        className="relative bg-white border border-border rounded-xl p-4 mb-4 cursor-pointer hover:bg-surface transition-colors"
+        className="relative bg-white dark:bg-dark-card border border-border dark:border-dark-border rounded-xl p-4 mb-4 cursor-pointer hover:bg-surface dark:hover:bg-dark-bg transition-colors"
       >
-        <button className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-border/50 text-text-secondary">
+        <button className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-border/50 dark:hover:bg-dark-border/50 text-text-secondary dark:text-dark-text-secondary">
           <Pencil size={16} />
         </button>
-        <h1 className="text-xl font-bold text-text-primary pr-8">{client.name}</h1>
+        <h1 className="text-xl font-bold text-text-primary dark:text-dark-text pr-8">{client.name}</h1>
         <div className="mt-2 space-y-1">
           {client.phone && (
             <div className="flex items-center gap-2">
-              <Phone size={14} className="text-text-secondary shrink-0" />
+              <Phone size={14} className="text-text-secondary dark:text-dark-text-secondary shrink-0" />
               <a href={`tel:${client.phone}`} onClick={(e) => e.stopPropagation()} className="text-sm text-primary">{formatPhone(client.phone)}</a>
             </div>
           )}
           {client.email && (
             <div className="flex items-center gap-2">
-              <Mail size={14} className="text-text-secondary shrink-0" />
-              <span className="text-sm text-text-secondary">{client.email}</span>
+              <Mail size={14} className="text-text-secondary dark:text-dark-text-secondary shrink-0" />
+              <span className="text-sm text-text-secondary dark:text-dark-text-secondary">{client.email}</span>
             </div>
           )}
           {client.address && (
             <div className="flex items-center gap-2">
-              <MapPin size={14} className="text-text-secondary shrink-0" />
+              <MapPin size={14} className="text-text-secondary dark:text-dark-text-secondary shrink-0" />
               <a href={`https://maps.google.com/?q=${encodeURIComponent(client.address)}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-sm text-primary">{client.address}</a>
             </div>
           )}
         </div>
-        {client.notes && <p className="text-sm text-text-secondary italic mt-2">{client.notes}</p>}
+        {client.notes && <p className="text-sm text-text-secondary dark:text-dark-text-secondary italic mt-2">{client.notes}</p>}
       </div>
 
       {/* Lost/Restore action */}
@@ -333,31 +399,31 @@ export default function ClientDetail() {
         {/* Jobs section */}
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-semibold">Jobs ({jobs.length})</h2>
+            <h2 className="text-base font-semibold dark:text-dark-text">Jobs ({jobs.length})</h2>
             <button onClick={() => setShowAddJob(true)} className="flex items-center gap-1 text-sm font-medium text-primary">
               <Plus size={16} /> Add Job
             </button>
           </div>
           {jobs.length === 0 ? (
-            <p className="text-sm text-text-secondary py-4">No jobs yet for this client.</p>
+            <p className="text-sm text-text-secondary dark:text-dark-text-secondary py-4">No jobs yet for this client.</p>
           ) : (
             <div className="space-y-2">
               {jobs.map(job => (
                 <div
                   key={job.id}
                   onClick={() => openJobModal(job)}
-                  className="bg-white border border-border rounded-xl p-3 active:bg-surface cursor-pointer"
+                  className="bg-white dark:bg-dark-card border border-border dark:border-dark-border rounded-xl p-3 active:bg-surface dark:active:bg-dark-bg cursor-pointer"
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-sm font-medium">{jobTypeLabels[job.job_type] || job.job_type}</span>
-                      {job.price && <span className="text-sm text-text-secondary ml-2">{formatPrice(job.price)}</span>}
+                      <span className="text-sm font-medium dark:text-dark-text">{jobTypeLabels[job.job_type] || job.job_type}</span>
+                      {job.price && <span className="text-sm text-text-secondary dark:text-dark-text-secondary ml-2">{formatPrice(job.price)}</span>}
                     </div>
                     <StatusBadge status={job.status} />
                   </div>
                   {job.scheduled_date && (
-                    <p className="text-xs text-text-secondary mt-1">
-                      {new Date(job.scheduled_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    <p className="text-xs text-text-secondary dark:text-dark-text-secondary mt-1">
+                      {new Date(job.scheduled_date.includes('T') ? job.scheduled_date : job.scheduled_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </p>
                   )}
                 </div>
@@ -366,14 +432,14 @@ export default function ClientDetail() {
           )}
 
           {/* Photos */}
-          <div className="border-t border-border pt-4 mt-4">
-            <h2 className="text-base font-semibold mb-3">Photos ({clientPhotos.length})</h2>
+          <div className="border-t border-border dark:border-dark-border pt-4 mt-4">
+            <h2 className="text-base font-semibold mb-3 dark:text-dark-text">Photos ({clientPhotos.length})</h2>
             {clientPhotos.length === 0 ? (
-              <p className="text-sm text-text-secondary py-2">No photos yet. Add photos from a job.</p>
+              <p className="text-sm text-text-secondary dark:text-dark-text-secondary py-2">No photos yet. Add photos from a job.</p>
             ) : (
               <div className="grid grid-cols-3 gap-2">
                 {clientPhotos.map(photo => (
-                  <div key={photo.id} className="relative aspect-square rounded-xl overflow-hidden bg-surface">
+                  <div key={photo.id} className="relative aspect-square rounded-xl overflow-hidden bg-surface dark:bg-dark-bg">
                     <img
                       src={photo.photo_url}
                       alt=""
@@ -392,14 +458,14 @@ export default function ClientDetail() {
 
         {/* Timeline / History */}
         <div>
-          <h2 className="text-base font-semibold mb-3 flex items-center gap-2">
+          <h2 className="text-base font-semibold mb-3 flex items-center gap-2 dark:text-dark-text">
             <MessageSquare size={18} /> Timeline
           </h2>
           <div className="flex gap-2 mb-4">
             <input
               type="text" value={newNote} onChange={(e) => setNewNote(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleAddNote()}
-              className="flex-1 px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="flex-1 px-3 py-2.5 border border-border dark:border-dark-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white dark:bg-dark-card dark:text-dark-text"
               placeholder="Add a note..."
             />
             <button onClick={handleAddNote} disabled={addingNote || !newNote.trim()} className="px-3 py-2.5 bg-primary text-white rounded-xl disabled:opacity-50">
@@ -407,7 +473,7 @@ export default function ClientDetail() {
             </button>
           </div>
           {events.length === 0 ? (
-            <p className="text-sm text-text-secondary py-4">No history yet.</p>
+            <p className="text-sm text-text-secondary dark:text-dark-text-secondary py-4">No history yet.</p>
           ) : (
             <div className="space-y-3">
               {events.map(event => (
@@ -419,11 +485,11 @@ export default function ClientDetail() {
                       event.event_type === 'job_created' ? 'bg-scheduled-text' :
                       'bg-text-secondary'
                     }`} />
-                    <div className="w-px flex-1 bg-border mt-1" />
+                    <div className="w-px flex-1 bg-border dark:bg-dark-border mt-1" />
                   </div>
                   <div className="pb-4 flex-1">
-                    <p className="text-sm text-text-primary">{event.description}</p>
-                    <p className="text-[11px] text-text-secondary mt-0.5">
+                    <p className="text-sm text-text-primary dark:text-dark-text">{event.description}</p>
+                    <p className="text-[11px] text-text-secondary dark:text-dark-text-secondary mt-0.5">
                       {new Date(event.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                       {' '}
                       {new Date(event.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
@@ -437,8 +503,8 @@ export default function ClientDetail() {
       </div>
 
       {/* Delete client */}
-      <div className="border-t border-border pt-4 mt-6">
-        <button onClick={handleDeleteClient} className="w-full py-3 flex items-center justify-center gap-2 border border-red-300 text-red-500 rounded-xl font-semibold text-sm hover:bg-red-50">
+      <div className="border-t border-border dark:border-dark-border pt-4 mt-6">
+        <button onClick={handleDeleteClient} className="w-full py-3 flex items-center justify-center gap-2 border border-red-300 text-red-500 rounded-xl font-semibold text-sm hover:bg-red-50 dark:hover:bg-red-500/10">
           <Trash2 size={16} /> Delete Client
         </button>
       </div>
@@ -446,31 +512,31 @@ export default function ClientDetail() {
       {/* Edit Profile Modal */}
       {showEditProfile && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center">
-          <div className="bg-white w-full sm:max-w-md sm:rounded-xl rounded-t-2xl p-5">
+          <div className="bg-white dark:bg-dark-card w-full sm:max-w-md sm:rounded-xl rounded-t-2xl p-5">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold">Edit Client</h2>
-              <button onClick={() => setShowEditProfile(false)} className="p-1 rounded-full hover:bg-surface"><X size={20} /></button>
+              <h2 className="text-lg font-bold dark:text-dark-text">Edit Client</h2>
+              <button onClick={() => setShowEditProfile(false)} className="p-1 rounded-full hover:bg-surface dark:hover:bg-dark-bg dark:text-dark-text"><X size={20} /></button>
             </div>
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium mb-1">Name</label>
-                <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full px-3 py-3 border border-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary" placeholder="Client name" />
+                <label className="block text-sm font-medium mb-1 dark:text-dark-text">Name</label>
+                <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full px-3 py-3 border border-border dark:border-dark-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white dark:bg-dark-bg dark:text-dark-text" placeholder="Client name" />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Phone</label>
-                <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full px-3 py-3 border border-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary" placeholder="(555) 123-4567" />
+                <label className="block text-sm font-medium mb-1 dark:text-dark-text">Phone</label>
+                <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full px-3 py-3 border border-border dark:border-dark-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white dark:bg-dark-bg dark:text-dark-text" placeholder="(555) 123-4567" />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Email</label>
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-3 py-3 border border-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary" placeholder="email@example.com" />
+                <label className="block text-sm font-medium mb-1 dark:text-dark-text">Email</label>
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-3 py-3 border border-border dark:border-dark-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white dark:bg-dark-bg dark:text-dark-text" placeholder="email@example.com" />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Address</label>
-                <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} className="w-full px-3 py-3 border border-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary" placeholder="123 Main St" />
+                <label className="block text-sm font-medium mb-1 dark:text-dark-text">Address</label>
+                <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} className="w-full px-3 py-3 border border-border dark:border-dark-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white dark:bg-dark-bg dark:text-dark-text" placeholder="123 Main St" />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Notes</label>
-                <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className="w-full px-3 py-3 border border-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none" placeholder="Notes about this client..." />
+                <label className="block text-sm font-medium mb-1 dark:text-dark-text">Notes</label>
+                <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className="w-full px-3 py-3 border border-border dark:border-dark-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none bg-white dark:bg-dark-bg dark:text-dark-text" placeholder="Notes about this client..." />
               </div>
               <button onClick={handleSave} disabled={saving} className="w-full py-3 bg-primary text-white rounded-xl font-semibold text-base hover:bg-primary/90 disabled:opacity-50">
                 {saving ? 'Saving...' : 'Save Changes'}
@@ -483,15 +549,15 @@ export default function ClientDetail() {
       {/* Job Detail Modal */}
       {selectedJob && !jmViewingPhoto && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center">
-          <div className="bg-white w-full sm:max-w-lg sm:rounded-xl rounded-t-2xl p-5 max-h-[85vh] overflow-y-auto">
+          <div className="bg-white dark:bg-dark-card w-full sm:max-w-lg sm:rounded-xl rounded-t-2xl p-5 max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold">{client.name}</h2>
-              <button onClick={closeJobModal} className="p-1 rounded-full hover:bg-surface"><X size={20} /></button>
+              <h2 className="text-lg font-bold dark:text-dark-text">{client.name}</h2>
+              <button onClick={closeJobModal} className="p-1 rounded-full hover:bg-surface dark:hover:bg-dark-bg dark:text-dark-text"><X size={20} /></button>
             </div>
 
             {/* Status progression */}
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Status</label>
+              <label className="block text-sm font-medium mb-2 dark:text-dark-text">Status</label>
               <div className="flex gap-1.5 overflow-x-auto pb-1">
                 {statuses.map((s, i) => {
                   const currentIndex = statuses.findIndex(st => st.key === jmStatus)
@@ -505,7 +571,7 @@ export default function ClientDetail() {
                       className={`shrink-0 px-2.5 py-1.5 rounded-full text-xs font-medium transition-all ${
                         isActive ? `${colors.bg} ${colors.text} ring-2 ${colors.ring}` :
                         isPast ? `${colors.bg} ${colors.text} opacity-60` :
-                        'bg-surface text-text-secondary'
+                        'bg-surface dark:bg-dark-bg text-text-secondary dark:text-dark-text-secondary'
                       }`}
                     >
                       {isPast ? '✓ ' : ''}{s.label}
@@ -518,8 +584,8 @@ export default function ClientDetail() {
             {/* Job fields */}
             <div className="space-y-3 mb-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Job Type</label>
-                <select value={jmJobType} onChange={jmMarkChanged(setJmJobType)} className="w-full px-3 py-3 border border-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white">
+                <label className="block text-sm font-medium mb-1 dark:text-dark-text">Job Type</label>
+                <select value={jmJobType} onChange={jmMarkChanged(setJmJobType)} className="w-full px-3 py-3 border border-border dark:border-dark-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white dark:bg-dark-bg dark:text-dark-text">
                   <option value="rescreen">Rescreen</option>
                   <option value="repair">Repair</option>
                   <option value="new_enclosure">New Enclosure</option>
@@ -528,8 +594,8 @@ export default function ClientDetail() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Screen Type</label>
-                <select value={jmScreenType} onChange={jmMarkChanged(setJmScreenType)} className="w-full px-3 py-3 border border-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white">
+                <label className="block text-sm font-medium mb-1 dark:text-dark-text">Screen Type</label>
+                <select value={jmScreenType} onChange={jmMarkChanged(setJmScreenType)} className="w-full px-3 py-3 border border-border dark:border-dark-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white dark:bg-dark-bg dark:text-dark-text">
                   <option value="">Select...</option>
                   <option value="standard">Standard</option>
                   <option value="no_see_um">No-See-Um</option>
@@ -542,21 +608,21 @@ export default function ClientDetail() {
               </div>
               <div className="flex gap-3">
                 <div className="flex-1">
-                  <label className="block text-sm font-medium mb-1">Panels</label>
-                  <input type="number" value={jmPanelCount} onChange={jmMarkChanged(setJmPanelCount)} className="w-full px-3 py-3 border border-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="0" />
+                  <label className="block text-sm font-medium mb-1 dark:text-dark-text">Panels</label>
+                  <input type="number" value={jmPanelCount} onChange={jmMarkChanged(setJmPanelCount)} className="w-full px-3 py-3 border border-border dark:border-dark-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white dark:bg-dark-bg dark:text-dark-text" placeholder="0" />
                 </div>
                 <div className="flex-1">
-                  <label className="block text-sm font-medium mb-1">Price ($)</label>
-                  <input type="number" value={jmPrice} onChange={jmMarkChanged(setJmPrice)} className="w-full px-3 py-3 border border-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="0.00" step="0.01" />
+                  <label className="block text-sm font-medium mb-1 dark:text-dark-text">Price ($)</label>
+                  <input type="number" value={jmPrice} onChange={jmMarkChanged(setJmPrice)} className="w-full px-3 py-3 border border-border dark:border-dark-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white dark:bg-dark-bg dark:text-dark-text" placeholder="0.00" step="0.01" />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Scheduled Date & Time</label>
-                <input type="datetime-local" value={jmScheduledDate} onChange={jmMarkChanged(setJmScheduledDate)} className="w-full px-3 py-3 border border-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                <label className="block text-sm font-medium mb-1 dark:text-dark-text">Scheduled Date & Time</label>
+                <input type="datetime-local" value={jmScheduledDate} onChange={jmMarkChanged(setJmScheduledDate)} className="w-full px-3 py-3 border border-border dark:border-dark-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white dark:bg-dark-bg dark:text-dark-text" />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Notes</label>
-                <textarea value={jmNotes} onChange={jmMarkChanged(setJmNotes)} rows={3} className="w-full px-3 py-3 border border-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none" placeholder="Job notes..." />
+                <label className="block text-sm font-medium mb-1 dark:text-dark-text">Notes</label>
+                <textarea value={jmNotes} onChange={jmMarkChanged(setJmNotes)} rows={3} className="w-full px-3 py-3 border border-border dark:border-dark-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none bg-white dark:bg-dark-bg dark:text-dark-text" placeholder="Job notes..." />
               </div>
               {jmChanged && (
                 <button onClick={handleJobSave} disabled={jmSaving} className="w-full py-3 bg-primary text-white rounded-xl font-semibold text-base hover:bg-primary/90 disabled:opacity-50">
@@ -566,9 +632,9 @@ export default function ClientDetail() {
             </div>
 
             {/* Photos */}
-            <div className="border-t border-border pt-4 mb-4">
+            <div className="border-t border-border dark:border-dark-border pt-4 mb-4">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold">Photos ({jmPhotos.length})</h3>
+                <h3 className="text-sm font-semibold dark:text-dark-text">Photos ({jmPhotos.length})</h3>
                 <label className="flex items-center gap-1 text-sm font-medium text-primary cursor-pointer">
                   <Camera size={16} />
                   {jmUploading ? 'Uploading...' : 'Add Photo'}
@@ -576,11 +642,11 @@ export default function ClientDetail() {
                 </label>
               </div>
               {jmPhotos.length === 0 ? (
-                <p className="text-sm text-text-secondary py-2">No photos yet.</p>
+                <p className="text-sm text-text-secondary dark:text-dark-text-secondary py-2">No photos yet.</p>
               ) : (
                 <div className="grid grid-cols-3 gap-2">
                   {jmPhotos.map(photo => (
-                    <div key={photo.id} className="relative aspect-square rounded-xl overflow-hidden bg-surface">
+                    <div key={photo.id} className="relative aspect-square rounded-xl overflow-hidden bg-surface dark:bg-dark-bg">
                       <img src={photo.photo_url} alt="" className="w-full h-full object-cover cursor-pointer" onClick={() => setJmViewingPhoto(photo)} />
                       <span className="absolute bottom-1 left-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded-full">{photo.photo_type}</span>
                     </div>
@@ -590,8 +656,8 @@ export default function ClientDetail() {
             </div>
 
             {/* Delete job */}
-            <div className="border-t border-border pt-4">
-              <button onClick={handleDeleteJob} className="w-full py-3 border border-red-300 text-red-600 rounded-xl font-semibold text-sm hover:bg-red-50">
+            <div className="border-t border-border dark:border-dark-border pt-4">
+              <button onClick={handleDeleteJob} className="w-full py-3 border border-red-300 text-red-600 rounded-xl font-semibold text-sm hover:bg-red-50 dark:hover:bg-red-500/10">
                 Delete Job
               </button>
             </div>

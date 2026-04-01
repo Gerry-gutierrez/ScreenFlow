@@ -28,7 +28,7 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-white">
+    <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-white dark:bg-dark-bg">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <Shield size={40} className="mx-auto text-primary mb-3" />
@@ -36,13 +36,13 @@ export default function AdminLogin() {
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-text-primary mb-1">Admin Key</label>
+            <label className="block text-sm font-medium text-text-primary dark:text-dark-text mb-1">Admin Key</label>
             <input
               type="password"
               value={key}
               onChange={(e) => setKey(e.target.value)}
               required
-              className="w-full px-3 py-3 border border-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              className="w-full px-3 py-3 border border-border dark:border-dark-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white dark:bg-dark-card dark:text-dark-text"
               placeholder="Enter your admin key"
             />
           </div>
@@ -55,7 +55,7 @@ export default function AdminLogin() {
             {loading ? 'Verifying...' : 'Access Admin'}
           </button>
         </form>
-        <p className="text-center text-sm text-text-secondary mt-6">
+        <p className="text-center text-sm text-text-secondary dark:text-dark-text-secondary mt-6">
           <Link to="/" className="text-primary font-medium hover:underline">Back to ScreenFlow</Link>
         </p>
       </div>

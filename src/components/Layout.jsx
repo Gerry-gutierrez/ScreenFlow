@@ -74,7 +74,7 @@ export default function Layout({ children }) {
   }, [subLoading, isActive, navigate])
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-dark-bg">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-primary">
         {/* Top bar */}
@@ -111,21 +111,21 @@ export default function Layout({ children }) {
               onChange={(e) => searchClients(e.target.value)}
               onFocus={() => searchResults.length > 0 && setShowResults(true)}
               placeholder="Search clients..."
-              className="w-full pl-9 pr-3 py-2.5 rounded-full text-sm bg-white border-none focus:outline-none focus:ring-2 focus:ring-white/30"
+              className="w-full pl-9 pr-3 py-2.5 rounded-full text-sm bg-white border-none focus:outline-none focus:ring-2 focus:ring-white/30 text-text-primary"
             />
 
             {/* Search results dropdown */}
             {showResults && searchResults.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg z-50 overflow-hidden border border-border">
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-dark-card rounded-lg shadow-lg z-50 overflow-hidden border border-border dark:border-dark-border">
                 {searchResults.map(client => (
                   <button
                     key={client.id}
                     onClick={() => handleResultClick(client.id)}
-                    className="w-full text-left px-4 py-3 hover:bg-surface border-b border-border last:border-b-0"
+                    className="w-full text-left px-4 py-3 hover:bg-surface dark:hover:bg-dark-surface border-b border-border dark:border-dark-border last:border-b-0"
                   >
-                    <p className="text-sm font-medium text-text-primary">{client.name}</p>
+                    <p className="text-sm font-medium text-text-primary dark:text-dark-text">{client.name}</p>
                     {client.phone && (
-                      <p className="text-xs text-text-secondary">{formatPhone(client.phone)}</p>
+                      <p className="text-xs text-text-secondary dark:text-dark-text-secondary">{formatPhone(client.phone)}</p>
                     )}
                   </button>
                 ))}
@@ -137,7 +137,7 @@ export default function Layout({ children }) {
 
       {/* Trial banner */}
       {isActive && subscriptionStatus === 'trialing' && daysLeft !== null && (
-        <div className="bg-primary/10 text-primary text-center text-sm py-2 font-medium">
+        <div className="bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-light text-center text-sm py-2 font-medium">
           🎉 {daysLeft} day{daysLeft !== 1 ? 's' : ''} left in your free trial
         </div>
       )}

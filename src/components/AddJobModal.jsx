@@ -170,12 +170,12 @@ export default function AddJobModal({ isOpen, onClose, onJobAdded, preselectedCl
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center" onClick={resetAndClose}>
       <div
-        className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl p-6 max-h-[90vh] overflow-y-auto"
+        className="bg-white dark:bg-dark-card w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl p-6 max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold">New Prospect</h2>
-          <button onClick={resetAndClose} className="p-1 rounded-full hover:bg-surface">
+          <h2 className="text-lg font-semibold dark:text-dark-text">New Prospect</h2>
+          <button onClick={resetAndClose} className="p-1 rounded-full hover:bg-surface dark:hover:bg-dark-bg dark:text-dark-text">
             <X size={20} />
           </button>
         </div>
@@ -184,22 +184,22 @@ export default function AddJobModal({ isOpen, onClose, onJobAdded, preselectedCl
           {/* Client selection */}
           {!selectedClient && !showNewClient && !preselectedClientId && (
             <div>
-              <label className="block text-sm font-medium mb-1">Client</label>
+              <label className="block text-sm font-medium mb-1 dark:text-dark-text">Client</label>
               <div className="relative">
-                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
+                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary dark:text-dark-text-secondary" />
                 <input
                   type="text"
                   value={clientSearch}
                   onChange={(e) => setClientSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-3 border border-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  className="w-full pl-9 pr-3 py-3 border border-border dark:border-dark-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white dark:bg-dark-bg dark:text-dark-text"
                   placeholder="Search clients..."
                 />
               </div>
-              <div className="mt-2 max-h-40 overflow-y-auto border border-border rounded-xl">
+              <div className="mt-2 max-h-40 overflow-y-auto border border-border dark:border-dark-border rounded-xl">
                 <button
                   type="button"
                   onClick={() => setShowNewClient(true)}
-                  className="w-full text-left px-3 py-3 text-primary font-medium hover:bg-surface border-b border-border"
+                  className="w-full text-left px-3 py-3 text-primary font-medium hover:bg-surface dark:hover:bg-dark-bg border-b border-border dark:border-dark-border"
                 >
                   + Add new client
                 </button>
@@ -208,14 +208,14 @@ export default function AddJobModal({ isOpen, onClose, onJobAdded, preselectedCl
                     key={client.id}
                     type="button"
                     onClick={() => setSelectedClient(client)}
-                    className="w-full text-left px-3 py-3 hover:bg-surface border-b border-border last:border-b-0"
+                    className="w-full text-left px-3 py-3 hover:bg-surface dark:hover:bg-dark-bg border-b border-border dark:border-dark-border last:border-b-0"
                   >
-                    <p className="font-medium text-sm">{client.name}</p>
-                    <p className="text-xs text-text-secondary">{client.phone}</p>
+                    <p className="font-medium text-sm dark:text-dark-text">{client.name}</p>
+                    <p className="text-xs text-text-secondary dark:text-dark-text-secondary">{client.phone}</p>
                   </button>
                 ))}
                 {filteredClients.length === 0 && clientSearch && (
-                  <p className="px-3 py-3 text-sm text-text-secondary">No clients found</p>
+                  <p className="px-3 py-3 text-sm text-text-secondary dark:text-dark-text-secondary">No clients found</p>
                 )}
               </div>
             </div>
@@ -223,10 +223,10 @@ export default function AddJobModal({ isOpen, onClose, onJobAdded, preselectedCl
 
           {/* Selected client display */}
           {selectedClient && (
-            <div className="flex items-center justify-between bg-surface rounded-xl px-3 py-3">
+            <div className="flex items-center justify-between bg-surface dark:bg-dark-bg rounded-xl px-3 py-3">
               <div>
-                <p className="font-medium text-sm">{selectedClient.name}</p>
-                <p className="text-xs text-text-secondary">{selectedClient.phone}</p>
+                <p className="font-medium text-sm dark:text-dark-text">{selectedClient.name}</p>
+                <p className="text-xs text-text-secondary dark:text-dark-text-secondary">{selectedClient.phone}</p>
               </div>
               {!preselectedClientId && (
                 <button type="button" onClick={() => setSelectedClient(null)} className="text-xs text-primary">
@@ -238,9 +238,9 @@ export default function AddJobModal({ isOpen, onClose, onJobAdded, preselectedCl
 
           {/* New client form */}
           {showNewClient && (
-            <div className="space-y-3 p-3 bg-surface rounded-xl">
+            <div className="space-y-3 p-3 bg-surface dark:bg-dark-bg rounded-xl">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">New Client</span>
+                <span className="text-sm font-medium dark:text-dark-text">New Client</span>
                 <button type="button" onClick={() => setShowNewClient(false)} className="text-xs text-primary">
                   Cancel
                 </button>
@@ -250,7 +250,7 @@ export default function AddJobModal({ isOpen, onClose, onJobAdded, preselectedCl
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 required={showNewClient}
-                className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white"
+                className="w-full px-3 py-2.5 border border-border dark:border-dark-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white dark:bg-dark-card dark:text-dark-text"
                 placeholder="Name *"
               />
               <input
@@ -258,14 +258,14 @@ export default function AddJobModal({ isOpen, onClose, onJobAdded, preselectedCl
                 value={newPhone}
                 onChange={(e) => setNewPhone(e.target.value)}
                 required={showNewClient}
-                className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white"
+                className="w-full px-3 py-2.5 border border-border dark:border-dark-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white dark:bg-dark-card dark:text-dark-text"
                 placeholder="Phone *"
               />
               <input
                 type="text"
                 value={newAddress}
                 onChange={(e) => setNewAddress(e.target.value)}
-                className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white"
+                className="w-full px-3 py-2.5 border border-border dark:border-dark-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white dark:bg-dark-card dark:text-dark-text"
                 placeholder="Address (optional)"
               />
             </div>
@@ -273,14 +273,14 @@ export default function AddJobModal({ isOpen, onClose, onJobAdded, preselectedCl
 
           {/* Job type */}
           <div>
-            <label className="block text-sm font-medium mb-1">Job Type</label>
+            <label className="block text-sm font-medium mb-1 dark:text-dark-text">Job Type</label>
             {services.length === 0 ? (
-              <p className="text-sm text-text-secondary py-2">No services found. Add services in the Services tab.</p>
+              <p className="text-sm text-text-secondary dark:text-dark-text-secondary py-2">No services found. Add services in the Services tab.</p>
             ) : (
               <select
                 value={jobType}
                 onChange={(e) => setJobType(e.target.value)}
-                className="w-full px-3 py-3 border border-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white"
+                className="w-full px-3 py-3 border border-border dark:border-dark-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white dark:bg-dark-bg dark:text-dark-text"
               >
                 {services.map(s => (
                   <option key={s.id} value={s.name}>{s.name}</option>
@@ -291,12 +291,12 @@ export default function AddJobModal({ isOpen, onClose, onJobAdded, preselectedCl
 
           {/* Quoted Amount */}
           <div>
-            <label className="block text-sm font-medium mb-1">Quoted Amount ($)</label>
+            <label className="block text-sm font-medium mb-1 dark:text-dark-text">Quoted Amount ($)</label>
             <input
               type="number"
               value={quotedPrice}
               onChange={(e) => setQuotedPrice(e.target.value)}
-              className="w-full px-3 py-3 border border-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              className="w-full px-3 py-3 border border-border dark:border-dark-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white dark:bg-dark-bg dark:text-dark-text"
               placeholder="0.00"
               step="0.01"
             />
@@ -304,12 +304,12 @@ export default function AddJobModal({ isOpen, onClose, onJobAdded, preselectedCl
 
           {/* Notes */}
           <div>
-            <label className="block text-sm font-medium mb-1">Notes</label>
+            <label className="block text-sm font-medium mb-1 dark:text-dark-text">Notes</label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
-              className="w-full px-3 py-3 border border-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none"
+              className="w-full px-3 py-3 border border-border dark:border-dark-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none bg-white dark:bg-dark-bg dark:text-dark-text"
               placeholder="Any details..."
             />
           </div>

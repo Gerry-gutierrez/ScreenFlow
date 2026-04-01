@@ -146,24 +146,24 @@ export default function ClientsPage({ filter }) {
 
   return (
     <div className="px-4 pt-4 pb-24">
-      <h1 className="text-xl font-bold mb-4">{titles[filter] || 'Clients'}</h1>
+      <h1 className="text-xl font-bold mb-4 dark:text-dark-text">{titles[filter] || 'Clients'}</h1>
 
       {/* Search + Sort */}
       <div className="flex gap-2 mb-4">
         <div className="relative flex-1">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary dark:text-dark-text-secondary" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name or phone..."
-            className="w-full pl-9 pr-3 py-3 border border-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+            className="w-full pl-9 pr-3 py-3 border border-border dark:border-dark-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white dark:bg-dark-card dark:text-dark-text"
           />
         </div>
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value)}
-          className="px-3 py-3 border border-border rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+          className="px-3 py-3 border border-border dark:border-dark-border rounded-xl text-sm bg-white dark:bg-dark-card dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
         >
           <option value="newest">Newest First</option>
           <option value="oldest">Oldest First</option>
@@ -174,7 +174,7 @@ export default function ClientsPage({ filter }) {
 
       {searchFiltered.length === 0 ? (
         <div className="text-center py-16">
-          <p className="text-text-secondary text-sm">
+          <p className="text-text-secondary dark:text-dark-text-secondary text-sm">
             {search ? 'No clients match your search.' : emptyMessages[filter] || 'No clients.'}
           </p>
         </div>
@@ -184,16 +184,16 @@ export default function ClientsPage({ filter }) {
             <div
               key={client.id}
               onClick={() => navigate(`/clients/${client.id}`)}
-              className="bg-white border border-border rounded-xl p-4 active:bg-surface cursor-pointer"
+              className="bg-white dark:bg-dark-card border border-border dark:border-dark-border rounded-xl p-4 active:bg-surface dark:active:bg-dark-bg cursor-pointer"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm">{client.name}</p>
+                  <p className="font-semibold text-sm dark:text-dark-text">{client.name}</p>
 
                   <div className="mt-1.5 space-y-1">
                     {client.phone && (
                       <div className="flex items-center gap-2">
-                        <Phone size={13} className="text-text-secondary shrink-0" />
+                        <Phone size={13} className="text-text-secondary dark:text-dark-text-secondary shrink-0" />
                         <a
                           href={`tel:${client.phone}`}
                           onClick={(e) => e.stopPropagation()}
@@ -205,13 +205,13 @@ export default function ClientsPage({ filter }) {
                     )}
                     {client.email && (
                       <div className="flex items-center gap-2">
-                        <Mail size={13} className="text-text-secondary shrink-0" />
-                        <span className="text-xs text-text-secondary truncate">{client.email}</span>
+                        <Mail size={13} className="text-text-secondary dark:text-dark-text-secondary shrink-0" />
+                        <span className="text-xs text-text-secondary dark:text-dark-text-secondary truncate">{client.email}</span>
                       </div>
                     )}
                     {client.address && (
                       <div className="flex items-center gap-2">
-                        <MapPin size={13} className="text-text-secondary shrink-0" />
+                        <MapPin size={13} className="text-text-secondary dark:text-dark-text-secondary shrink-0" />
                         <a
                           href={`https://maps.google.com/?q=${encodeURIComponent(client.address)}`}
                           target="_blank"
@@ -237,18 +237,18 @@ export default function ClientsPage({ filter }) {
                         <span className="text-[11px] text-done-text font-medium">
                           {client.completedJobs} completed job{client.completedJobs !== 1 ? 's' : ''}
                         </span>
-                        <span className="text-[11px] text-text-secondary">
+                        <span className="text-[11px] text-text-secondary dark:text-dark-text-secondary">
                           Client since {formatDate(client.created_at)}
                         </span>
                       </div>
                     )}
                     {filter === 'lost' && client.lost_at && (
-                      <span className="text-[11px] text-text-secondary">
+                      <span className="text-[11px] text-text-secondary dark:text-dark-text-secondary">
                         Lost on {formatDate(client.lost_at)}
                       </span>
                     )}
                     {client.updated_at && (
-                      <p className="text-[11px] text-text-secondary mt-1">
+                      <p className="text-[11px] text-text-secondary dark:text-dark-text-secondary mt-1">
                         Last worked on {formatDate(client.updated_at)}
                       </p>
                     )}
@@ -281,53 +281,53 @@ export default function ClientsPage({ filter }) {
       {/* Add Client Modal */}
       {showAddClient && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center">
-          <div className="bg-white w-full sm:max-w-md sm:rounded-xl rounded-t-2xl p-5">
+          <div className="bg-white dark:bg-dark-card w-full sm:max-w-md sm:rounded-xl rounded-t-2xl p-5">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold">Add Client</h2>
-              <button onClick={() => setShowAddClient(false)} className="p-1 rounded-full hover:bg-surface">
+              <h2 className="text-lg font-bold dark:text-dark-text">Add Client</h2>
+              <button onClick={() => setShowAddClient(false)} className="p-1 rounded-full hover:bg-surface dark:hover:bg-dark-bg dark:text-dark-text">
                 <X size={20} />
               </button>
             </div>
             <form onSubmit={handleAddClient} className="space-y-3">
               <div>
-                <label className="block text-sm font-medium mb-1">Name *</label>
+                <label className="block text-sm font-medium mb-1 dark:text-dark-text">Name *</label>
                 <input
                   type="text"
                   value={newClient.name}
                   onChange={(e) => setNewClient(c => ({ ...c, name: e.target.value }))}
                   required
-                  className="w-full px-3 py-3 border border-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  className="w-full px-3 py-3 border border-border dark:border-dark-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white dark:bg-dark-bg dark:text-dark-text"
                   placeholder="Client name"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Phone *</label>
+                <label className="block text-sm font-medium mb-1 dark:text-dark-text">Phone *</label>
                 <input
                   type="tel"
                   value={newClient.phone}
                   onChange={(e) => setNewClient(c => ({ ...c, phone: e.target.value }))}
                   required
-                  className="w-full px-3 py-3 border border-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  className="w-full px-3 py-3 border border-border dark:border-dark-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white dark:bg-dark-bg dark:text-dark-text"
                   placeholder="(555) 123-4567"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Address</label>
+                <label className="block text-sm font-medium mb-1 dark:text-dark-text">Address</label>
                 <input
                   type="text"
                   value={newClient.address}
                   onChange={(e) => setNewClient(c => ({ ...c, address: e.target.value }))}
-                  className="w-full px-3 py-3 border border-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  className="w-full px-3 py-3 border border-border dark:border-dark-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white dark:bg-dark-bg dark:text-dark-text"
                   placeholder="123 Main St"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Notes</label>
+                <label className="block text-sm font-medium mb-1 dark:text-dark-text">Notes</label>
                 <textarea
                   value={newClient.notes}
                   onChange={(e) => setNewClient(c => ({ ...c, notes: e.target.value }))}
                   rows={2}
-                  className="w-full px-3 py-3 border border-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none"
+                  className="w-full px-3 py-3 border border-border dark:border-dark-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none bg-white dark:bg-dark-bg dark:text-dark-text"
                   placeholder="Optional notes..."
                 />
               </div>
