@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Menu, User, Search } from 'lucide-react'
+import { Menu, User, Search, Settings, LogOut } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { formatPhone } from '../utils/formatPhone'
@@ -8,7 +8,7 @@ import Sidebar from './Sidebar'
 import useSubscription from '../hooks/useSubscription'
 
 export default function Layout({ children }) {
-  const { user } = useAuth()
+  const { user, signOut, setKeepSignedIn, getKeepSignedIn } = useAuth()
   const navigate = useNavigate()
   const { loading: subLoading, subscriptionStatus, daysLeft, isActive } = useSubscription()
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -16,10 +16,14 @@ export default function Layout({ children }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState([])
   const [showResults, setShowResults] = useState(false)
+  const [showProfileMenu, setShowProfileMenu] = useState(false)
+  const [keepSignedIn, setKeepSignedInLocal] = useState(false)
   const searchRef = useRef(null)
+  const profileRef = useRef(null)
 
   useEffect(() => {
     if (user) {
+      setKeepSignedInLocal(getKeepSignedIn())
       supabase
         .from('operator_profile')
         .select('business_name')
@@ -31,11 +35,14 @@ export default function Layout({ children }) {
     }
   }, [user])
 
-  // Close dropdown on outside click
+  // Close dropdowns on outside click
   useEffect(() => {
     const handleClick = (e) => {
       if (searchRef.current && !searchRef.current.contains(e.target)) {
         setShowResults(false)
+      }
+      if (profileRef.current && !profileRef.current.contains(e.target)) {
+        setShowProfileMenu(false)
       }
     }
     document.addEventListener('mousedown', handleClick)
@@ -67,6 +74,18 @@ export default function Layout({ children }) {
     setShowResults(false)
   }
 
+  const handleToggleKeepSignedIn = () => {
+    const newValue = !keepSignedIn
+    setKeepSignedInLocal(newValue)
+    setKeepSignedIn(newValue)
+  }
+
+  const handleSignOut = async () => {
+    setShowProfileMenu(false)
+    await signOut()
+    navigate('/', { replace: true })
+  }
+
   useEffect(() => {
     if (!subLoading && !isActive) {
       navigate('/paywall', { replace: true })
@@ -93,12 +112,58 @@ export default function Layout({ children }) {
               )}
             </div>
           </div>
-          <button
-            onClick={() => navigate('/settings')}
-            className="p-1.5 rounded-full hover:bg-white/10"
-          >
-            <User size={28} className="text-white" />
-          </button>
+
+          {/* Profile icon + dropdown */}
+          <div className="relative" ref={profileRef}>
+            <button
+              onClick={() => setShowProfileMenu(!showProfileMenu)}
+              className="p-1.5 rounded-full hover:bg-white/10"
+            >
+              <User size={28} className="text-white" />
+            </button>
+
+            {showProfileMenu && (
+              <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-dark-card rounded-xl shadow-lg border border-border dark:border-dark-border z-50 overflow-hidden">
+                {/* Keep me signed in */}
+                <div className="px-4 py-3 border-b border-border dark:border-dark-border">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-text-primary dark:text-dark-text">Keep me signed in</span>
+                    <button
+                      onClick={handleToggleKeepSignedIn}
+                      className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${
+                        keepSignedIn ? 'bg-primary' : 'bg-border dark:bg-dark-border'
+                      }`}
+                    >
+                      <span
+                        className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${
+                          keepSignedIn ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-text-secondary dark:text-dark-text-secondary mt-1">Stay signed in for 30 days</p>
+                </div>
+
+                {/* Settings */}
+                <button
+                  onClick={() => { setShowProfileMenu(false); navigate('/settings') }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-text-primary dark:text-dark-text hover:bg-surface dark:hover:bg-dark-bg transition-colors border-b border-border dark:border-dark-border"
+                >
+                  <Settings size={16} className="text-text-secondary dark:text-dark-text-secondary" />
+                  Settings
+                </button>
+
+                {/* Log Out */}
+                <button
+                  onClick={handleSignOut}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                >
+                  <LogOut size={16} />
+                  Log Out
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Search section */}

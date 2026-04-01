@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [keepSignedIn, setKeepSignedIn] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const { signIn } = useAuth()
@@ -16,7 +17,7 @@ export default function Login() {
     setError('')
     setLoading(true)
     try {
-      await signIn(email, password)
+      await signIn(email, password, keepSignedIn)
       const redirect = searchParams.get('redirect')
       navigate(redirect === 'admin' ? '/admin' : '/dashboard', { replace: true })
     } catch (err) { setError(err.message) }
@@ -39,6 +40,16 @@ export default function Login() {
             <label className="block text-sm font-medium text-text-primary dark:text-dark-text mb-1">Password</label>
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="w-full px-3 py-3 border border-border dark:border-dark-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white dark:bg-dark-card dark:text-dark-text" placeholder="••••••••" />
           </div>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={keepSignedIn}
+              onChange={(e) => setKeepSignedIn(e.target.checked)}
+              className="w-4 h-4 rounded border-border text-primary focus:ring-primary/30 accent-primary"
+            />
+            <span className="text-sm text-text-primary dark:text-dark-text">Keep me signed in</span>
+            <span className="text-xs text-text-secondary dark:text-dark-text-secondary ml-auto">30 days</span>
+          </label>
           {error && <p className="text-red-500 text-sm">{error}</p>}
           <button type="submit" disabled={loading} className="w-full py-3 bg-primary text-white rounded-xl font-semibold text-base hover:bg-primary/90 transition-colors disabled:opacity-50">
             {loading ? 'Signing in...' : 'Sign In'}

@@ -1,11 +1,19 @@
 import { Link } from 'react-router-dom'
-import { Users, CalendarCheck, Wrench, ClipboardList } from 'lucide-react'
+import { Users, CalendarCheck, Wrench, ClipboardList, Camera, Calendar, Moon, History, Settings } from 'lucide-react'
 
 const features = [
   { icon: Users, title: 'Track Prospects', desc: 'Keep every lead in one place — name, phone, address, notes.' },
   { icon: CalendarCheck, title: 'Stay On Schedule', desc: "See what's quoted, scheduled, and done at a glance." },
   { icon: Wrench, title: 'Manage Services', desc: 'Customize your service list and pricing to fit your business.' },
   { icon: ClipboardList, title: 'Follow Every Job', desc: 'From first call to final walkthrough, never lose track.' },
+]
+
+const moreFeatures = [
+  { icon: Camera, title: 'Photo Uploads', desc: 'Snap and upload job site photos directly from the field. Before, after, and damage shots — all tied to the job.' },
+  { icon: Calendar, title: 'Appointment Scheduling', desc: 'Calendar view and row view for your schedule. Reschedule appointments with full history tracking.' },
+  { icon: Moon, title: 'Dark Mode', desc: 'Built-in night mode for late-night field work. Easy on the eyes, saves battery on the job site.' },
+  { icon: History, title: 'Activity Timeline', desc: 'Every action logged automatically — status changes, appointments, reschedules, notes. Nothing falls through the cracks.' },
+  { icon: Settings, title: 'Services Management', desc: 'Customize your service types — rescreen, repair, new enclosure, frame painting, and more. Set your own pricing.' },
 ]
 const checks = ['Unlimited clients', 'Unlimited jobs', 'Custom services', 'Full pipeline view']
 
@@ -43,6 +51,20 @@ export default function LandingPage() {
         </div>
       </section>
       <section className="px-6 py-16">
+        <div className="max-w-4xl mx-auto">
+          <h3 className="text-2xl font-bold text-text-primary dark:text-dark-text text-center mb-10">Built for the field, not the office.</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {moreFeatures.map(({ icon: Icon, title, desc }) => (
+              <div key={title} className="bg-white dark:bg-dark-card rounded-xl p-6 border border-border dark:border-dark-border">
+                <Icon size={24} className="text-primary mb-3" />
+                <h4 className="font-semibold text-text-primary dark:text-dark-text mb-1">{title}</h4>
+                <p className="text-sm text-text-secondary dark:text-dark-text-secondary">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+      <section className="px-6 py-16 bg-surface dark:bg-dark-card">
         <div className="max-w-md mx-auto text-center">
           <h3 className="text-2xl font-bold text-text-primary dark:text-dark-text mb-2">Simple pricing</h3>
           <p className="text-4xl font-bold text-primary mt-4">$15<span className="text-lg font-normal text-text-secondary dark:text-dark-text-secondary">/month</span></p>

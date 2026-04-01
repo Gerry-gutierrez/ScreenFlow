@@ -1,17 +1,20 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useTheme } from '../context/ThemeContext'
 import { supabase } from '../lib/supabase'
-import { Trash2, Search, Shield, LogOut } from 'lucide-react'
+import { Trash2, Search, Shield, LogOut, Sun, Moon } from 'lucide-react'
 
 export default function AdminPage() {
   const { user, signOut } = useAuth()
+  const { darkMode, toggleDarkMode } = useTheme()
   const navigate = useNavigate()
   const [isAdmin, setIsAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
   const [users, setUsers] = useState([])
   const [search, setSearch] = useState('')
   const [deleteConfirm, setDeleteConfirm] = useState(null)
+  const [tab, setTab] = useState('all')
 
   useEffect(() => {
     checkAdmin()
@@ -65,6 +68,13 @@ export default function AdminPage() {
     return Math.max(0, diff)
   }
 
+  const isUserActive = (profile) => {
+    const status = profile.subscription_status || 'trial'
+    if (status === 'active') return true
+    const daysLeft = getTrialDaysLeft(profile.trial_started_at)
+    return daysLeft > 0
+  }
+
   const getStatusBadge = (profile) => {
     const status = profile.subscription_status || 'trial'
     if (status === 'active') return { label: 'Monthly Plan', bg: 'bg-green-100', text: 'text-green-700' }
@@ -85,11 +95,29 @@ export default function AdminPage() {
     </div>
   )
 
-  const filtered = users.filter(u =>
+  // Filter by search
+  const searchFiltered = users.filter(u =>
     (u.business_name || '').toLowerCase().includes(search.toLowerCase()) ||
     (u.email || '').toLowerCase().includes(search.toLowerCase()) ||
     (u.phone || '').toLowerCase().includes(search.toLowerCase())
   )
+
+  // Filter by tab
+  const filtered = searchFiltered.filter(u => {
+    if (tab === 'active') return isUserActive(u)
+    if (tab === 'inactive') return !isUserActive(u)
+    return true
+  })
+
+  const allCount = searchFiltered.length
+  const activeCount = searchFiltered.filter(u => isUserActive(u)).length
+  const inactiveCount = searchFiltered.filter(u => !isUserActive(u)).length
+
+  const tabs = [
+    { key: 'all', label: 'All', count: allCount },
+    { key: 'active', label: 'Active', count: activeCount },
+    { key: 'inactive', label: 'Inactive', count: inactiveCount },
+  ]
 
   return (
     <div className="min-h-screen bg-white dark:bg-dark-bg">
@@ -100,22 +128,73 @@ export default function AdminPage() {
             <Shield size={20} className="text-primary" />
             <span className="text-lg font-bold text-primary">ScreenFlow Admin</span>
           </div>
-          <button
-            onClick={handleSignOut}
-            className="flex items-center gap-1.5 text-sm text-text-secondary dark:text-dark-text-secondary hover:text-red-500 transition-colors"
-          >
-            <LogOut size={16} />
-            Sign Out
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={toggleDarkMode}
+              className="p-1.5 rounded-lg hover:bg-surface dark:hover:bg-dark-bg text-text-secondary dark:text-dark-text-secondary"
+            >
+              {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+            <button
+              onClick={handleSignOut}
+              className="flex items-center gap-1.5 text-sm text-text-secondary dark:text-dark-text-secondary hover:text-red-500 transition-colors"
+            >
+              <LogOut size={16} />
+              Sign Out
+            </button>
+          </div>
         </div>
       </header>
 
       <div className="p-4 max-w-2xl mx-auto">
+        {/* Appearance toggle */}
+        <div className="bg-white dark:bg-dark-card border border-border dark:border-dark-border rounded-xl p-4 mb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {darkMode ? <Moon size={18} className="text-primary" /> : <Sun size={18} className="text-primary" />}
+              <h2 className="text-base font-semibold dark:text-dark-text">Appearance</h2>
+            </div>
+            <button
+              onClick={toggleDarkMode}
+              className={`relative w-14 h-7 rounded-full transition-colors duration-200 ${
+                darkMode ? 'bg-primary' : 'bg-border dark:bg-dark-border'
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform duration-200 flex items-center justify-center ${
+                  darkMode ? 'translate-x-7' : 'translate-x-0'
+                }`}
+              >
+                {darkMode ? <Moon size={14} className="text-primary" /> : <Sun size={14} className="text-amber-500" />}
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* Users heading */}
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-xl font-bold text-text-primary dark:text-dark-text">Users</h1>
           <span className="text-sm text-text-secondary dark:text-dark-text-secondary">{filtered.length} users</span>
         </div>
 
+        {/* Tabs */}
+        <div className="flex gap-2 mb-4">
+          {tabs.map(t => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                tab === t.key
+                  ? 'bg-primary text-white'
+                  : 'bg-surface dark:bg-dark-card text-text-secondary dark:text-dark-text-secondary'
+              }`}
+            >
+              {t.label} ({t.count})
+            </button>
+          ))}
+        </div>
+
+        {/* Search */}
         <div className="relative mb-4">
           <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary dark:text-dark-text-secondary" />
           <input
@@ -127,36 +206,53 @@ export default function AdminPage() {
           />
         </div>
 
-        <div className="space-y-3">
-          {filtered.map((profile) => {
-            const badge = getStatusBadge(profile)
-            return (
-              <div key={profile.id} className="bg-white dark:bg-dark-card border border-border dark:border-dark-border rounded-xl p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-text-primary dark:text-dark-text">{profile.business_name || 'No name'}</h3>
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${badge.bg} ${badge.text}`}>
-                        {badge.label}
-                      </span>
+        {/* User list */}
+        {filtered.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-sm text-text-secondary dark:text-dark-text-secondary">
+              {search ? 'No users match your search.' : tab === 'active' ? 'No active users.' : tab === 'inactive' ? 'No inactive users.' : 'No users yet.'}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filtered.map((profile) => {
+              const badge = getStatusBadge(profile)
+              const active = isUserActive(profile)
+              return (
+                <div key={profile.id} className="bg-white dark:bg-dark-card border border-border dark:border-dark-border rounded-xl p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-semibold text-text-primary dark:text-dark-text">{profile.business_name || 'No name'}</h3>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${badge.bg} ${badge.text}`}>
+                          {badge.label}
+                        </span>
+                      </div>
+                      <p className="text-sm text-text-secondary dark:text-dark-text-secondary">{profile.email}</p>
+                      {profile.phone && <p className="text-sm text-text-secondary dark:text-dark-text-secondary">{profile.phone}</p>}
+                      <div className="flex items-center gap-3 mt-1">
+                        <p className="text-xs text-text-secondary dark:text-dark-text-secondary">
+                          Joined {new Date(profile.created_at).toLocaleDateString()}
+                        </p>
+                        {profile.updated_at && (
+                          <p className="text-xs text-text-secondary dark:text-dark-text-secondary">
+                            Last active {new Date(profile.updated_at).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    <p className="text-sm text-text-secondary dark:text-dark-text-secondary">{profile.email}</p>
-                    {profile.phone && <p className="text-sm text-text-secondary dark:text-dark-text-secondary">{profile.phone}</p>}
-                    <p className="text-xs text-text-secondary dark:text-dark-text-secondary mt-1">
-                      Joined {new Date(profile.created_at).toLocaleDateString()}
-                    </p>
+                    <button
+                      onClick={() => setDeleteConfirm(profile)}
+                      className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => setDeleteConfirm(profile)}
-                    className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
-                  >
-                    <Trash2 size={18} />
-                  </button>
                 </div>
-              </div>
-            )
-          })}
-        </div>
+              )
+            })}
+          </div>
+        )}
 
         {deleteConfirm && (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
