@@ -1,0 +1,41 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #0F6E56;
+  --color-primary-light: #E1F5EE;
+  --color-surface: #F8F8F6;
+  --color-border: #E5E5E3;
+  --color-text-primary: #1A1A1A;
+  --color-text-secondary: #6B6B6B;
+
+  --color-lead-bg: #E6F1FB;
+  --color-lead-text: #185FA5;
+  --color-quoted-bg: #FAEEDA;
+  --color-quoted-text: #854F0B;
+  --color-approved-bg: #E1F5EE;
+  --color-approved-text: #0F6E56;
+  --color-scheduled-bg: #EEEDFE;
+  --color-scheduled-text: #534AB7;
+  --color-in_progress-bg: #FBEAF0;
+  --color-in_progress-text: #993556;
+  --color-done-bg: #EAF3DE;
+  --color-done-text: #3B6D11;
+
+  --font-family-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: var(--font-family-sans);
+  color: var(--color-text-primary);
+  background: #FFFFFF;
+  margin: 0;
+  padding: 0;
+}
+
+input, select, textarea, button {
+  font-family: inherit;
+}
