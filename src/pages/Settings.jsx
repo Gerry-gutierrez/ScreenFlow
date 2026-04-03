@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { CreditCard, User, Shield, Eye, EyeOff, Sun, Moon } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -8,7 +9,8 @@ import useSubscription from '../hooks/useSubscription'
 export default function Settings() {
   const { user, signOut } = useAuth()
   const { darkMode, toggleDarkMode } = useTheme()
-  const { subscriptionStatus, daysLeft } = useSubscription()
+  const { subscriptionStatus, daysLeft, refetch } = useSubscription()
+  const [searchParams, setSearchParams] = useSearchParams()
 
   // Information state
   const [businessName, setBusinessName] = useState('')
@@ -17,7 +19,6 @@ export default function Settings() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
-
   // Password state
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -25,6 +26,24 @@ export default function Settings() {
   const [showNew, setShowNew] = useState(false)
   const [changingPw, setChangingPw] = useState(false)
   const [pwMessage, setPwMessage] = useState('')
+
+  // Handle Stripe success redirect
+  useEffect(() => {
+    const sessionId = searchParams.get('session_id')
+    if (sessionId && user) {
+      const activateSubscription = async () => {
+        await supabase
+          .from('operator_profile')
+          .update({ subscription_status: 'active' })
+          .eq('user_id', user.id)
+        // Clean the URL
+        setSearchParams({}, { replace: true })
+        // Refresh subscription state
+        refetch()
+      }
+      activateSubscription()
+    }
+  }, [searchParams, user, setSearchParams, refetch])
 
   useEffect(() => {
     if (user) fetchProfile()
@@ -104,6 +123,10 @@ export default function Settings() {
     }
   }
 
+  const handleResubscribe = () => {
+    window.location.href = import.meta.env.VITE_STRIPE_PAYMENT_LINK
+  }
+
   const handleSignOut = async () => {
     await signOut()
   }
@@ -166,24 +189,24 @@ export default function Settings() {
           {subscriptionStatus === 'active' && (
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded-full">Active</span>
+                <span className="px-2 py-0.5 bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400 text-xs font-semibold rounded-full">Active</span>
                 <span className="text-sm text-text-secondary dark:text-dark-text-secondary">$15/month</span>
               </div>
               <button
-                onClick={() => alert('Cancel flow coming soon')}
-                className="w-full py-2.5 border border-red-300 text-red-600 rounded-xl text-sm font-semibold hover:bg-red-50 dark:hover:bg-red-500/10"
+                onClick={() => alert('Stripe Customer Portal coming soon')}
+                className="w-full py-2.5 border border-border dark:border-dark-border text-text-primary dark:text-dark-text rounded-xl text-sm font-semibold hover:bg-surface dark:hover:bg-dark-bg"
               >
-                Cancel Subscription
+                Manage Subscription
               </button>
             </div>
           )}
           {subscriptionStatus !== 'trialing' && subscriptionStatus !== 'active' && (
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 bg-red-100 text-red-600 text-xs font-semibold rounded-full">Expired</span>
+                <span className="px-2 py-0.5 bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 text-xs font-semibold rounded-full">Expired</span>
               </div>
               <button
-                onClick={() => alert('Stripe checkout coming soon')}
+                onClick={handleResubscribe}
                 className="w-full py-2.5 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary/90"
               >
                 Resubscribe

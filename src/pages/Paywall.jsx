@@ -1,7 +1,11 @@
 import { useAuth } from '../context/AuthContext'
 
 export default function Paywall() {
-  const { signOut } = useAuth()
+  const { user, signOut } = useAuth()
+
+  const handleCheckout = () => {
+    window.location.href = import.meta.env.VITE_STRIPE_PAYMENT_LINK
+  }
 
   return (
     <div className="min-h-screen bg-surface dark:bg-dark-bg flex items-center justify-center px-6">
@@ -16,7 +20,7 @@ export default function Paywall() {
         </p>
 
         <button
-          onClick={() => alert('Stripe checkout coming soon')}
+          onClick={handleCheckout}
           className="w-full py-3.5 bg-primary text-white rounded-xl font-semibold text-base hover:bg-primary/90"
         >
           Continue with ScreenFlow — $15/mo

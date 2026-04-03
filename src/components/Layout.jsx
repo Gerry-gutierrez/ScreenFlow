@@ -200,10 +200,15 @@ export default function Layout({ children }) {
         </div>
       </header>
 
-      {/* Trial banner */}
+      {/* Trial / Subscription banner */}
       {isActive && subscriptionStatus === 'trialing' && daysLeft !== null && (
         <div className="bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-light text-center text-sm py-2 font-medium">
           🎉 {daysLeft} day{daysLeft !== 1 ? 's' : ''} left in your free trial
+        </div>
+      )}
+      {subscriptionStatus === 'active' && (
+        <div className="bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 text-center text-sm py-2 font-medium">
+          ✓ Active Subscription
         </div>
       )}
 
