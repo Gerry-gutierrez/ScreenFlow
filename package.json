@@ -11,6 +11,7 @@
     "start": "npm run build && node server.js"
   },
   "dependencies": {
+    "@stripe/stripe-js": "^9.0.1",
     "@supabase/supabase-js": "^2.100.1",
     "express": "^5.2.1",
     "lucide-react": "^1.7.0",

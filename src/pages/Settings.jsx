@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { loadStripe } from '@stripe/stripe-js'
 import { CreditCard, User, Shield, Eye, EyeOff, Sun, Moon } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import useSubscription from '../hooks/useSubscription'
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
 
 export default function Settings() {
   const { user, signOut } = useAuth()
@@ -123,8 +126,15 @@ export default function Settings() {
     }
   }
 
-  const handleResubscribe = () => {
-    window.location.href = import.meta.env.VITE_STRIPE_PAYMENT_LINK
+  const handleResubscribe = async () => {
+    const stripe = await stripePromise
+    await stripe.redirectToCheckout({
+      lineItems: [{ price: import.meta.env.VITE_STRIPE_PRICE_ID, quantity: 1 }],
+      mode: 'subscription',
+      successUrl: `${window.location.origin}/settings?session_id={CHECKOUT_SESSION_ID}`,
+      cancelUrl: `${window.location.origin}/settings`,
+      customerEmail: user?.email,
+    })
   }
 
   const handleSignOut = async () => {

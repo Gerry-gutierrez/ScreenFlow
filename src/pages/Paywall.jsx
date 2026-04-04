@@ -1,10 +1,29 @@
+import { useState } from 'react'
+import { loadStripe } from '@stripe/stripe-js'
 import { useAuth } from '../context/AuthContext'
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
 
 export default function Paywall() {
   const { user, signOut } = useAuth()
+  const [loading, setLoading] = useState(false)
 
-  const handleCheckout = () => {
-    window.location.href = import.meta.env.VITE_STRIPE_PAYMENT_LINK
+  const handleCheckout = async () => {
+    setLoading(true)
+    const stripe = await stripePromise
+
+    const { error } = await stripe.redirectToCheckout({
+      lineItems: [{ price: import.meta.env.VITE_STRIPE_PRICE_ID, quantity: 1 }],
+      mode: 'subscription',
+      successUrl: `${window.location.origin}/settings?session_id={CHECKOUT_SESSION_ID}`,
+      cancelUrl: `${window.location.origin}/paywall`,
+      customerEmail: user?.email,
+    })
+
+    if (error) {
+      console.error('Stripe checkout error:', error)
+      setLoading(false)
+    }
   }
 
   return (
@@ -21,9 +40,10 @@ export default function Paywall() {
 
         <button
           onClick={handleCheckout}
-          className="w-full py-3.5 bg-primary text-white rounded-xl font-semibold text-base hover:bg-primary/90"
+          disabled={loading}
+          className="w-full py-3.5 bg-primary text-white rounded-xl font-semibold text-base hover:bg-primary/90 disabled:opacity-50"
         >
-          Continue with ScreenFlow — $15/mo
+          {loading ? 'Redirecting...' : 'Continue with ScreenFlow — $15/mo'}
         </button>
 
         <p className="text-xs text-text-secondary dark:text-dark-text-secondary mt-3">
