@@ -15,6 +15,7 @@ export default function AdminPage() {
   const [search, setSearch] = useState('')
   const [deleteConfirm, setDeleteConfirm] = useState(null)
   const [tab, setTab] = useState('all')
+  const [metrics, setMetrics] = useState(null)
 
   useEffect(() => {
     checkAdmin()
@@ -30,8 +31,75 @@ export default function AdminPage() {
     if (data?.is_admin) {
       setIsAdmin(true)
       fetchUsers()
+      fetchMetrics()
     }
     setLoading(false)
+  }
+
+  const fetchMetrics = async () => {
+    const { data } = await supabase
+      .from('operator_profile')
+      .select('created_at, subscription_status')
+    if (!data) return
+
+    const now = Date.now()
+    const day = 24 * 60 * 60 * 1000
+
+    const signupsWeek = data.filter(
+      (r) => r.created_at && now - new Date(r.created_at).getTime() <= 7 * day
+    ).length
+    const signupsMonth = data.filter(
+      (r) => r.created_at && now - new Date(r.created_at).getTime() <= 30 * day
+    ).length
+
+    // Last 8 weeks (week 0 = current week, going back)
+    const weeks = []
+    for (let i = 0; i < 8; i++) {
+      const end = now - i * 7 * day
+      const start = end - 7 * day
+      const count = data.filter((r) => {
+        if (!r.created_at) return false
+        const t = new Date(r.created_at).getTime()
+        return t > start && t <= end
+      }).length
+      const label =
+        i === 0
+          ? 'This week'
+          : i === 1
+          ? 'Last week'
+          : `${i} weeks ago`
+      weeks.push({ label, count })
+    }
+
+    // Conversion: active / (active+trial+expired+canceled)
+    const convStatuses = ['active', 'trial', 'expired', 'canceled']
+    const paid = data.filter((r) => r.subscription_status === 'active').length
+    const convTotal = data.filter((r) =>
+      convStatuses.includes(r.subscription_status)
+    ).length
+    const conversionRate =
+      convTotal > 0 ? (paid / convTotal) * 100 : 0
+
+    // Churn: canceled / (active+canceled)
+    const canceled = data.filter(
+      (r) => r.subscription_status === 'canceled'
+    ).length
+    const everPaid = data.filter((r) =>
+      ['active', 'canceled'].includes(r.subscription_status)
+    ).length
+    const churnRate = everPaid > 0 ? (canceled / everPaid) * 100 : 0
+
+    setMetrics({
+      signupsWeek,
+      signupsMonth,
+      weeks,
+      paid,
+      convTotal,
+      conversionRate,
+      canceled,
+      everPaid,
+      churnRate,
+    })
   }
 
   const fetchUsers = async () => {
@@ -170,6 +238,55 @@ export default function AdminPage() {
             </button>
           </div>
         </div>
+
+        {/* Growth Metrics */}
+        {metrics && (
+          <div className="mb-6">
+            <h2 className="text-xl font-bold text-text-primary dark:text-dark-text mb-3">Growth Metrics</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {/* Signups */}
+              <div className="bg-white dark:bg-dark-card border border-border dark:border-dark-border rounded-xl p-4">
+                <h3 className="text-sm font-semibold text-text-secondary dark:text-dark-text-secondary mb-2">Signups</h3>
+                <div className="flex items-baseline gap-4 mb-3">
+                  <div>
+                    <div className="text-2xl font-bold text-text-primary dark:text-dark-text">{metrics.signupsWeek}</div>
+                    <div className="text-xs text-text-secondary dark:text-dark-text-secondary">This week</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-text-primary dark:text-dark-text">{metrics.signupsMonth}</div>
+                    <div className="text-xs text-text-secondary dark:text-dark-text-secondary">This month</div>
+                  </div>
+                </div>
+                <div className="border-t border-border dark:border-dark-border pt-2 space-y-1">
+                  {metrics.weeks.map((w, i) => (
+                    <div key={i} className="flex justify-between text-xs">
+                      <span className="text-text-secondary dark:text-dark-text-secondary">{w.label}</span>
+                      <span className="font-medium text-text-primary dark:text-dark-text">{w.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Conversion Rate */}
+              <div className="bg-white dark:bg-dark-card border border-border dark:border-dark-border rounded-xl p-4">
+                <h3 className="text-sm font-semibold text-text-secondary dark:text-dark-text-secondary mb-2">Conversion Rate</h3>
+                <div className="text-4xl font-bold text-primary mb-1">{metrics.conversionRate.toFixed(1)}%</div>
+                <div className="text-xs text-text-secondary dark:text-dark-text-secondary">
+                  {metrics.paid} paid / {metrics.convTotal} total
+                </div>
+              </div>
+
+              {/* Churn Rate */}
+              <div className="bg-white dark:bg-dark-card border border-border dark:border-dark-border rounded-xl p-4">
+                <h3 className="text-sm font-semibold text-text-secondary dark:text-dark-text-secondary mb-2">Churn Rate</h3>
+                <div className="text-4xl font-bold text-red-500 mb-1">{metrics.churnRate.toFixed(1)}%</div>
+                <div className="text-xs text-text-secondary dark:text-dark-text-secondary">
+                  {metrics.canceled} canceled / {metrics.everPaid} ever-paid
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Users heading */}
         <div className="flex items-center justify-between mb-4">
